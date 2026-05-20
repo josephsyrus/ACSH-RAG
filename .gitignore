@@ -1,0 +1,6 @@
+chroma_db/
+bm25_index/
+venv/
+__pycache__/
+*.pyc
+documents/
