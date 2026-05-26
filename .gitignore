@@ -3,7 +3,7 @@ bm25_index/
 venv/
 __pycache__/
 *.pyc
-documents/
+Documents/
 .env
 .venv/
 

@@ -10,7 +10,7 @@ from src.vector_store import VectorStore
 from src.bm25_retriever import BM25Retriever
 
 # ── Configuration ─────────────────────────────
-DOCUMENTS_DIR = "./documents"
+DOCUMENTS_DIR = "./Documents"
 CHROMA_DIR    = "./chroma_db"
 BM25_DIR      = "./bm25_index"
 CHUNK_SIZE    = 250   # tokens per chunk — must stay ≤256 to match all-MiniLM-L6-v2's
