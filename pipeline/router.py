@@ -56,45 +56,45 @@ class AdaptiveRouter:
 
         self.model_name = "gemini-3.5-flash"
 
-def classify(self, query: str) -> str:
-    for attempt in range(3):
-        try:
-            response = client.models.generate_content(
-                model=self.model_name,   # make sure this is "gemini-2.0-flash"
-                contents=query,
-                config=types.GenerateContentConfig(
-                    system_instruction=self.system_prompt,
-                    temperature=0,
-                    max_output_tokens=20,
-                ),
-            )
+    def classify(self, query: str) -> str:
+        for attempt in range(3):
+            try:
+                response = client.models.generate_content(
+                    model=self.model_name,   # make sure this is "gemini-2.0-flash"
+                    contents=query,
+                    config=types.GenerateContentConfig(
+                        system_instruction=self.system_prompt,
+                        temperature=0,
+                        max_output_tokens=20,
+                    ),
+                )
 
-            # Safer extraction than response.text shortcut
-            raw = ""
-            if response.candidates and response.candidates[0].content.parts:
-                raw = response.candidates[0].content.parts[0].text.strip().lower()
-                raw = raw.rstrip(".,!? \n")
+                # Safer extraction than response.text shortcut
+                raw = ""
+                if response.candidates and response.candidates[0].content.parts:
+                    raw = response.candidates[0].content.parts[0].text.strip().lower()
+                    raw = raw.rstrip(".,!? \n")
 
-            print(f"  [Router] Raw: '{raw}'")
+                print(f"  [Router] Raw: '{raw}'")
 
-            if raw not in self.VALID_ROUTES:
-                print(f"  [Router] '{raw}' not valid, defaulting to 'simple'")
-                return "simple"
+                if raw not in self.VALID_ROUTES:
+                    print(f"  [Router] '{raw}' not valid, defaulting to 'simple'")
+                    return "simple"
 
-            print(f"  [Router] Route: {raw}")
-            return raw
+                print(f"  [Router] Route: {raw}")
+                return raw
 
-        except Exception as e:
-            if "429" in str(e):
-                wait = 15 * (attempt + 1)
-                print(f"  [Router] Rate limit. Waiting {wait}s...")
-                time.sleep(wait)
-            else:
-                print(f"  [Router] Error: {e}. Defaulting to 'simple'")
-                return "simple"
+            except Exception as e:
+                if "429" in str(e):
+                    wait = 15 * (attempt + 1)
+                    print(f"  [Router] Rate limit. Waiting {wait}s...")
+                    time.sleep(wait)
+                else:
+                    print(f"  [Router] Error: {e}. Defaulting to 'simple'")
+                    return "simple"
 
-    print("  [Router] All retries failed. Defaulting to 'simple'")
-    return "simple"
+        print("  [Router] All retries failed. Defaulting to 'simple'")
+        return "simple"
 
 # ─────────────────────────────────────────────
 # Quick test

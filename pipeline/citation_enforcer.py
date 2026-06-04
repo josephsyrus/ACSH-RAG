@@ -279,16 +279,16 @@ class CitationEnforcer:
 
         return response.text.strip()
     
-def _call_with_retry(self, **kwargs):
-    """Wrapper for all Gemini calls with 429 retry."""
-    for attempt in range(3):
-        try:
-            return client.models.generate_content(**kwargs)
-        except Exception as e:
-            if "429" in str(e):
-                wait = 20 * (attempt + 1)
-                print(f"  [CitationEnforcer] Rate limit. Waiting {wait}s...")
-                time.sleep(wait)
-            else:
-                raise
-    raise RuntimeError("Max retries exceeded in CitationEnforcer.")
+    def _call_with_retry(self, **kwargs):
+        """Wrapper for all Gemini calls with 429 retry."""
+        for attempt in range(3):
+            try:
+                return client.models.generate_content(**kwargs)
+            except Exception as e:
+                if "429" in str(e):
+                    wait = 20 * (attempt + 1)
+                    print(f"  [CitationEnforcer] Rate limit. Waiting {wait}s...")
+                    time.sleep(wait)
+                else:
+                    raise
+        raise RuntimeError("Max retries exceeded in CitationEnforcer.")
