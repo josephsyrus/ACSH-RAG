@@ -5,3 +5,5 @@ rank-bm25==0.2.2
 tiktoken==0.8.0
 numpy==1.26.4
 tqdm==4.67.1
+networkx>=3.0
+spacy>=3.7

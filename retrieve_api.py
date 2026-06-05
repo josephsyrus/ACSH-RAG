@@ -21,12 +21,14 @@ RETURN FORMAT — each item in the list is a dict with these keys:
     text          (str)   — the actual chunk text (180–200 words / ~250 tokens)
     metadata      (dict)  — {filename, source, doc_type, chunk_index, total_chunks}
     filename      (str)   — shortcut to metadata["filename"]
-    rrf_score     (float) — combined relevance score, range ~0.003–0.016, higher=better
-    vector_score  (float) — semantic similarity, range 0–1
-    bm25_score    (float) — normalized keyword score, range 0–1
+    rrf_score     (float) — combined relevance score (3-way fusion), higher=better
+    vector_score  (float) — semantic similarity score, range 0–1
+    bm25_score    (float) — normalized BM25 keyword score, range 0–1
+    graph_score   (float) — entity-overlap graph score, range 0–1
     vector_rank   (int)   — rank in vector search results (1=best), None if not found
     bm25_rank     (int)   — rank in BM25 search results (1=best), None if not found
-    found_in      (list)  — e.g. ["vector", "bm25"] or ["vector"] or ["bm25"]
+    graph_rank    (int)   — rank in graph search results (1=best), None if not found
+    found_in      (list)  — e.g. ["vector", "bm25", "graph"] or any subset
 ─────────────────────────────────────────────────────────────────────
 """
 
@@ -48,6 +50,7 @@ def _get_retriever() -> HybridRetriever:
         _retriever = HybridRetriever(
             chroma_persist_dir="./chroma_db",
             bm25_index_dir="./bm25_index",
+            graph_db_dir="./graph_db",
         )
     return _retriever
 
@@ -56,8 +59,9 @@ def retrieve_chunks(
     query:          str,
     top_k:          int   = 5,
     fetch_k:        int   = 20,
-    vector_weight:  float = 0.5,
-    bm25_weight:    float = 0.5,
+    vector_weight:  float = 0.4,
+    bm25_weight:    float = 0.3,
+    graph_weight:   float = 0.3,
     vector_query:   str   = None,
 ) -> List[Dict]:
 
@@ -67,6 +71,7 @@ def retrieve_chunks(
         fetch_k=fetch_k,
         vector_weight=vector_weight,
         bm25_weight=bm25_weight,
+        graph_weight=graph_weight,
         vector_query=vector_query,
     )
 
@@ -81,4 +86,5 @@ if __name__ == "__main__":
         filename = r.get('filename') or r.get('metadata', {}).get('filename', 'unknown')
         clean_text = ' '.join(r['text'].split())
         print(f"  [{i}] {filename} | rrf={r['rrf_score']:.5f} | found_in={r['found_in']}")
+        print(f"       graph_score={r.get('graph_score', 0):.4f} | graph_rank={r.get('graph_rank')}")
         print(f"       {clean_text}\n")

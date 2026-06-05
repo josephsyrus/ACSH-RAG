@@ -8,6 +8,7 @@ from src.hybrid_retriever import HybridRetriever
 
 CHROMA_DIR = "./chroma_db"
 BM25_DIR   = "./bm25_index"
+GRAPH_DIR  = "./graph_db"
 
 
 def print_results(results: list, query: str):
@@ -25,13 +26,15 @@ def print_results(results: list, query: str):
         rrf         = chunk.get("rrf_score",    0.0)
         vec         = chunk.get("vector_score", 0.0)
         bm25        = chunk.get("bm25_score",   0.0)
+        graph       = chunk.get("graph_score",  0.0)
         v_rank      = chunk.get("vector_rank",  "—")
         b_rank      = chunk.get("bm25_rank",    "—")
+        g_rank      = chunk.get("graph_rank",   "—")
 
         print(f"\n  ┌─ Result #{i}")
         print(f"  │  File     : {filename}  (chunk {chunk_idx}/{total})")
-        print(f"  │  RRF      : {rrf:.5f}   (Vector rank: {v_rank}, BM25 rank: {b_rank})")
-        print(f"  │  Scores   : vector={vec:.4f}  bm25={bm25:.4f}")
+        print(f"  │  RRF      : {rrf:.5f}   (Vector rank: {v_rank}, BM25 rank: {b_rank}, Graph rank: {g_rank})")
+        print(f"  │  Scores   : vector={vec:.4f}  bm25={bm25:.4f}  graph={graph:.4f}")
         print(f"  │  Found in : {found_in}")
         print(f"  │  Preview  :")
 
@@ -55,7 +58,7 @@ def main():
     parser.add_argument("--top_k", type=int,  default=5,    help="Number of results (default: 5)")
     args = parser.parse_args()
 
-    retriever = HybridRetriever(chroma_persist_dir=CHROMA_DIR, bm25_index_dir=BM25_DIR)
+    retriever = HybridRetriever(chroma_persist_dir=CHROMA_DIR, bm25_index_dir=BM25_DIR, graph_db_dir=GRAPH_DIR)
 
     if args.query:
         results = retriever.retrieve(args.query, top_k=args.top_k)
