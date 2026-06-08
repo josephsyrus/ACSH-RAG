@@ -1,13 +1,13 @@
-import os
+﻿import os
 from typing import List, Dict, Optional
 from .vector_store import VectorStore
 from .bm25_retriever import BM25Retriever
 from .graph_store import GraphStore
 
 
-# ─────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # RRF Merge Function
-# ─────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def reciprocal_rank_fusion(
     vector_results: List[Dict],
@@ -50,7 +50,7 @@ def reciprocal_rank_fusion(
                 "graph_rank":   None,
             }
 
-    # ── score vector results ──────────────────
+    # â”€â”€ score vector results â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     for rank, chunk in enumerate(vector_results, start=1):
         cid = chunk["chunk_id"]
         _ensure(cid, chunk)
@@ -59,7 +59,7 @@ def reciprocal_rank_fusion(
         scores[cid]["vector_score"] = chunk.get("vector_score", 0.0)
         scores[cid]["vector_rank"]  = rank
 
-    # ── score bm25 results ────────────────────
+    # â”€â”€ score bm25 results â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     for rank, chunk in enumerate(bm25_results, start=1):
         cid = chunk["chunk_id"]
         _ensure(cid, chunk)
@@ -68,7 +68,7 @@ def reciprocal_rank_fusion(
         scores[cid]["bm25_score"]  = chunk.get("bm25_score_normalized", 0.0)
         scores[cid]["bm25_rank"]   = rank
 
-    # ── score graph results ───────────────────
+    # â”€â”€ score graph results â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     for rank, chunk in enumerate(graph_results or [], start=1):
         cid = chunk["chunk_id"]
         _ensure(cid, chunk)
@@ -77,10 +77,10 @@ def reciprocal_rank_fusion(
         scores[cid]["graph_score"] = chunk.get("graph_score", 0.0)
         scores[cid]["graph_rank"]  = rank
 
-    # ── sort by combined rrf score ────────────
+    # â”€â”€ sort by combined rrf score â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     ranked = sorted(scores.values(), key=lambda x: x["rrf_score"], reverse=True)
 
-    # ── assemble output dicts ─────────────────
+    # â”€â”€ assemble output dicts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     output = []
     for item in ranked:
         chunk = dict(item["chunk"])
@@ -97,9 +97,9 @@ def reciprocal_rank_fusion(
     return output
 
 
-# ─────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # HybridRetriever Class
-# ─────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class HybridRetriever:
     def __init__(
@@ -147,15 +147,15 @@ class HybridRetriever:
 
         print("  [1/4] Vector search...")
         vector_results = self.vector_store.search(_vector_query, top_k=fetch_k)
-        print(f"        → {len(vector_results)} candidates")
+        print(f"        â†’ {len(vector_results)} candidates")
 
         print("  [2/4] BM25 keyword search...")
         bm25_results = self.bm25.search(query, top_k=fetch_k)
-        print(f"        → {len(bm25_results)} candidates")
+        print(f"        â†’ {len(bm25_results)} candidates")
 
         print("  [3/4] Graph entity search...")
         graph_results = self.graph_store.search(query, top_k=fetch_k)
-        print(f"        → {len(graph_results)} candidates")
+        print(f"        â†’ {len(graph_results)} candidates")
 
         print("  [4/4] Merging with 3-way Reciprocal Rank Fusion...")
         merged = reciprocal_rank_fusion(
@@ -168,5 +168,6 @@ class HybridRetriever:
         )
 
         final = merged[:top_k]
-        print(f"        → Returning top {len(final)} results")
+        print(f"        â†’ Returning top {len(final)} results")
         return final
+

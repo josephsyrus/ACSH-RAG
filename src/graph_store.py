@@ -1,6 +1,7 @@
 import os
 import json
 import math
+import re
 from typing import List, Dict, Optional
 from collections import defaultdict
 
@@ -41,6 +42,37 @@ class GraphStore:
                 )
         return self._nlp
 
+    def _clean_text_for_nlp(self, text: str) -> str:
+        """
+        Remove PDF section-number noise where digits are glued to words.
+        e.g. '13Combination Cooking' → 'Combination Cooking'
+             '12Grill' → 'Grill'
+        Only strips digits that are immediately followed by a letter (no space).
+        Leaves legitimate numbers like 'Chapter 13' or '100%' untouched.
+        """
+        return re.sub(r'\b\d+([A-Za-z])', r'\1', text)
+
+    def _get_subphrases(self, phrase: str, min_len: int = 2, max_len: int = 3) -> List[str]:
+        """
+        Return all consecutive sub-spans shorter than the full phrase,
+        with length between min_len and max_len words.
+
+        e.g. 'combination cooking feature' →
+             ['combination cooking', 'cooking feature']
+
+        The full phrase itself is excluded (it is stored separately).
+        Single-word results are never returned (min_len=2).
+        """
+        words = phrase.split()
+        if len(words) <= min_len:
+            return []
+        subphrases = []
+        upper = min(max_len + 1, len(words))   # < len(words) so full phrase is never included
+        for length in range(min_len, upper):
+            for start in range(len(words) - length + 1):
+                subphrases.append(" ".join(words[start : start + length]))
+        return subphrases
+
     def _extract_entities(self, text: str) -> List[tuple]:
         """Return list of (normalised_text, label) for named entities in text."""
         nlp = self._get_nlp()
@@ -71,7 +103,8 @@ class GraphStore:
 
         # Process in batches for speed (spaCy pipe is faster than per-text calls).
         # "lemmatizer" is disabled for speed; parser must stay ON for noun_chunks.
-        texts = [c["text"] for c in chunks]
+        # Texts are cleaned first to strip PDF section-number noise (e.g. "13Combination").
+        texts = [self._clean_text_for_nlp(c["text"]) for c in chunks]
         batch_size = 64
         # Each entry: {"entities": [(text, label), ...], "noun_phrases": [text, ...]}
         all_signals: List[Dict] = []
@@ -127,15 +160,18 @@ class GraphStore:
                 else:
                     self.graph.add_edge(cid, eid, rel="CONTAINS", count=1)
 
-            # Add concept (noun phrase) nodes and chunk→concept edges
+            # Add concept (noun phrase) nodes and chunk→concept edges.
+            # Also index all shorter sub-spans so queries with partial phrases can match
+            # (e.g. stored "combination cooking feature" also yields "combination cooking").
             for np_text in signals["noun_phrases"]:
-                nid = f"np_{np_text}"
-                if not self.graph.has_node(nid):
-                    self.graph.add_node(nid, type="concept", text=np_text)
-                if self.graph.has_edge(cid, nid):
-                    self.graph[cid][nid]["count"] += 1
-                else:
-                    self.graph.add_edge(cid, nid, rel="CONTAINS", count=1)
+                for phrase in [np_text] + self._get_subphrases(np_text):
+                    nid = f"np_{phrase}"
+                    if not self.graph.has_node(nid):
+                        self.graph.add_node(nid, type="concept", text=phrase)
+                    if self.graph.has_edge(cid, nid):
+                        self.graph[cid][nid]["count"] += 1
+                    else:
+                        self.graph.add_edge(cid, nid, rel="CONTAINS", count=1)
 
         # Add sequential NEXT edges within each document
         for source, doc_chunk_list in doc_chunks.items():
@@ -217,11 +253,25 @@ class GraphStore:
             if key:
                 signal_ids.add(f"ent_{key}")
 
-        # Noun phrases (multi-word only — same filter as build)
+        # Noun phrases (multi-word only — same filter as build).
+        # Also expand with sub-phrases so a longer query phrase can match a shorter
+        # stored node (e.g. query "combination cooking features" also looks up "combination cooking").
         for np in doc.noun_chunks:
             key = " ".join(np.text.split()).lower()
             if len(key.split()) >= 2:
                 signal_ids.add(f"np_{key}")
+                for sub in self._get_subphrases(key):
+                    signal_ids.add(f"np_{sub}")
+
+        # Raw n-gram fallback: generate all 2- and 3-word windows directly from the query
+        # tokens. Catches cases where spaCy's parser doesn't produce a useful noun chunk
+        # (e.g. "tell me about combination cooking" → spaCy only yields 'me' as a chunk,
+        # but the raw bigram "combination cooking" matches the indexed concept node).
+        # Non-existent nodes are simply skipped in the IDF loop, so noise is free.
+        tokens = [t.text.lower() for t in doc if not t.is_space and t.text.strip()]
+        for n in (2, 3):
+            for i in range(len(tokens) - n + 1):
+                signal_ids.add(f"np_{' '.join(tokens[i:i + n])}")
 
         if not signal_ids:
             return []
