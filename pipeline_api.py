@@ -45,6 +45,7 @@ def run_pipeline(query: str) -> Dict:
         "hyde_text":       "",
         "raw_chunks":      [],
         "reranked_chunks": [],
+        "grounded_chunks": [],
         "gate_decision":   "",
         "retry_count":     0,
         "draft_answer":    "",
@@ -58,19 +59,57 @@ def run_pipeline(query: str) -> Dict:
     result   = pipeline.invoke(initial_state)
 
     return {
-        "answer":     result.get("final_answer",    "No answer generated."),
-        "citations":  result.get("cited_chunk_ids", []),
-        "route":      result.get("route",           "unknown"),
-        "confidence": result.get("confidence",      "unknown"),
-    }
+
+    "answer": result.get(
+        "final_answer",
+        "No answer generated."
+    ),
+
+    "citations": result.get(
+        "cited_chunk_ids",
+        []
+    ),
+
+    "route": result.get(
+        "route",
+        "unknown"
+    ),
+
+    "confidence": result.get(
+        "confidence",
+        "unknown"
+    ),
+
+    "grounded_chunks": [
+
+        {
+            "chunk_id": c["chunk_id"],
+            "text": c["text"],
+            "score": c.get(
+                "rerank_score",
+                None
+            )
+        }
+
+        for c in result.get(
+            "reranked_chunks",
+            []
+        )
+    ]
+}
 
 
 # ── Quick self-test ─────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    test_queries = [
-        "What is 2+2?",
-        "What is the statute of limitations for breach of contract?",
-    ]
+
+    import sys
+
+    if len(sys.argv) > 1:
+        test_queries = [" ".join(sys.argv[1:])]
+    else:
+        test_queries = [
+            "What is 2+2?"
+        ]
     for q in test_queries:
         print(f"\n{'='*60}")
         print(f"Query: {q}")
@@ -78,5 +117,8 @@ if __name__ == "__main__":
         r = run_pipeline(q)
         print(f"\nRoute:      {r['route']}")
         print(f"Confidence: {r['confidence']}")
-        print(f"Citations:  {r['citations']}")
+        print("\nUsed chunks:")
+
+        for chunk in r["grounded_chunks"]:
+            print(chunk["chunk_id"])
         print(f"\nAnswer:\n{r['answer']}")

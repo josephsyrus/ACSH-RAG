@@ -15,6 +15,7 @@ Model:
 import os
 import json
 import yaml
+import time
 
 from dotenv import load_dotenv
 from typing import List
@@ -71,37 +72,61 @@ class HyDEGenerator:
         self.system_prompt = _load_prompt("hyde")
 
     def generate(self, query: str) -> str:
-        """
-        Generate a hypothetical document passage.
+        for attempt in range(3):
 
-        Args:
-            query: Raw user query
+            try:
 
-        Returns:
-            str: Hypothetical document passage
-        """
+                response = client.models.generate_content(
 
-        response = client.models.generate_content(
+                    model=self.model_name,
 
-            model=self.model_name,
+                    contents=query,
 
-            contents=query,
+                    config=types.GenerateContentConfig(
 
-            config=types.GenerateContentConfig(
+                        system_instruction=self.system_prompt,
 
-                system_instruction=self.system_prompt,
+                        temperature=0.3,
 
-                temperature=0.3,
+                        max_output_tokens=400,
+                    )
+                )
 
-                max_output_tokens=400,
-            )
+                hypothesis = response.text.strip()
+
+                print(
+                    f"[HyDE] Error: {e}"
+                )
+
+                print(
+                    f"[HyDE] Retry after "
+                    f"{wait}s..."
+                )
+
+                return hypothesis
+
+            except Exception as e:
+
+                if any(code in str(e) for code in ["429", "503"]):
+
+                    wait = 10 * (attempt + 1)
+
+                    print(
+                        f"[HyDE] Retry after "
+                        f"{wait}s..."
+                    )
+
+                    time.sleep(wait)
+
+                else:
+                    raise
+
+        print(
+            "[HyDE] Failed after retries. "
+            "Using original query."
         )
 
-        hypothesis = response.text.strip()
-
-        print(f"[HyDE] Generated: {hypothesis[:80]}...")
-
-        return hypothesis
+        return query
 
 
 # ─────────────────────────────────────────────

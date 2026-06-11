@@ -71,9 +71,25 @@ class AdaptiveRouter:
 
                 # Safer extraction than response.text shortcut
                 raw = ""
-                if response.candidates and response.candidates[0].content.parts:
-                    raw = response.candidates[0].content.parts[0].text.strip().lower()
-                    raw = raw.rstrip(".,!? \n")
+
+                try:
+
+                    if (
+                        response.candidates
+                        and response.candidates[0].content.parts
+                    ):
+                        raw = (
+                            response.candidates[0]
+                            .content.parts[0]
+                            .text
+                            .strip()
+                            .lower()
+                        )
+
+                except Exception:
+                    raw = ""
+
+                raw = raw.rstrip(".,!? \n")
 
                 print(f"  [Router] Raw: '{raw}'")
 
@@ -85,12 +101,25 @@ class AdaptiveRouter:
                 return raw
 
             except Exception as e:
-                if "429" in str(e):
-                    wait = 15 * (attempt + 1)
-                    print(f"  [Router] Rate limit. Waiting {wait}s...")
+
+                if any(code in str(e) for code in ["429", "503"]):
+
+                    wait = 10 * (2 ** attempt)
+
+                    print(
+                        f"  [Router] Gemini unavailable. "
+                        f"Retrying in {wait}s..."
+                    )
+
                     time.sleep(wait)
+
                 else:
-                    print(f"  [Router] Error: {e}. Defaulting to 'simple'")
+
+                    print(
+                        f"  [Router] Error: {e}. "
+                        f"Defaulting to 'simple'"
+                    )
+
                     return "simple"
 
         print("  [Router] All retries failed. Defaulting to 'simple'")

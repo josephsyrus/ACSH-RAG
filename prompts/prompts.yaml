@@ -15,8 +15,11 @@ router:
                   relationships between concepts.
                   Example: "Compare X with Y and explain which the book recommends"
 
-    Respond with ONLY this JSON and nothing else:
-    {"route": "direct"} or {"route": "simple"} or {"route": "complex"}
+    Respond with ONLY one word:
+
+    direct
+    simple
+    complex
 
 hyde:
   system: |
