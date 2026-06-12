@@ -94,14 +94,7 @@ class HyDEGenerator:
 
                 hypothesis = response.text.strip()
 
-                print(
-                    f"[HyDE] Error: {e}"
-                )
-
-                print(
-                    f"[HyDE] Retry after "
-                    f"{wait}s..."
-                )
+                print("[HyDE] Generated hypothetical document.")
 
                 return hypothesis
 
