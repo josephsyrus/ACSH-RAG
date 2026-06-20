@@ -1,0 +1,22 @@
+{
+  "timestamp": "2026-06-13T13:25:43.555430",
+  "mode": "local-3-rows",
+  "samples_evaluated": 3,
+  "scores": {
+    "faithfulness": 0.0,
+    "answer_relevancy": 0.7667644222293593,
+    "context_recall": 1.0,
+    "context_precision": 0.0
+  },
+  "overall_average": 0.4416911055573398,
+  "thresholds": {
+    "faithfulness": 0.7,
+    "answer_relevancy": 0.7,
+    "context_recall": 0.65,
+    "context_precision": 0.65
+  },
+  "faithfulness_hard_threshold": 0.7,
+  "overall_threshold": 0.7,
+  "passed": false,
+  "faithfulness_hard_pass": false
+}

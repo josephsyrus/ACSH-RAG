@@ -1,0 +1,5 @@
+ragas==0.1.21
+datasets==2.20.0
+langchain-google-genai==1.0.10
+pandas==2.2.2
+python-dotenv==1.0.1

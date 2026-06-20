@@ -1,0 +1,38 @@
+
+# RAGAS Evaluation Configuration
+# These thresholds control what counts as "passing".
+# Start at 0.70 for faithfulness. Adjust after seeing your first real scores.
+
+metrics:
+  faithfulness:
+    threshold: 0.70
+    description: "Are all claims in the answer supported by retrieved chunks? Catches hallucinations."
+
+  answer_relevancy:
+    threshold: 0.70
+    description: "Does the answer actually address the question asked?"
+
+  context_recall:
+    threshold: 0.65
+    description: "Did retrieval find all the chunks needed to answer the question?"
+
+  context_precision:
+    threshold: 0.65
+    description: "Are retrieved chunks relevant (low noise ratio)?"
+
+# Overall pass: the AVERAGE of all four metrics must exceed this
+overall_threshold: 0.70
+
+# Faithfulness alone must exceed this — this is the hard anti-hallucination gate
+# Even if everything else passes, a system with faithfulness < 0.70 fails CI
+faithfulness_hard_threshold: 0.70
+
+# CI mode uses fewer samples to run faster in GitHub Actions
+ci_sample_size: 20
+
+# Gemini model used as the RAGAS judge LLM
+# Using 1.5-flash as the judge — it's stable, fast, and well-tested with RAGAS
+judge_model: "gemini-2.5-flash-lite"
+
+# Embedding model for RAGAS answer relevancy calculation
+embedding_model: "models/gemini-embedding-001"
