@@ -1,0 +1,145 @@
+name: ACSH-RAG Evaluation Gate
+
+# Trigger: every pull request to main, every push to main, and manual runs
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  evaluate:
+    name: RAGAS Evaluation
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      # ── 1. Checkout ────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── 2. Python setup ────────────────────────────────────────────
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      # ── 3. Install all dependencies ────────────────────────────────
+      #    Uses the project's own requirements files so CI matches the
+      #    versions this codebase is actually built against:
+      #      requirements.txt   — retrieval stack (incl. networkx + spacy)
+      #      requirements_b.txt — google-genai + LangGraph + langchain-core
+      #      requirements_c.txt — ragas + datasets + pandas (evaluation)
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements_b.txt
+          pip install -r requirements_c.txt
+          python -m spacy download en_core_web_sm
+
+      # ── 4. Create .env file from GitHub Secrets ────────────────────
+      - name: Create .env file
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          echo "GEMINI_API_KEY=$GEMINI_API_KEY" > .env
+          echo ".env created."
+
+      # ── 5. Restore document corpus ─────────────────────────────────
+      #    Documents are NOT committed to git (they are in .gitignore).
+      #    They are stored as a base64 zip in the DOCUMENTS_ZIP_B64 secret.
+      #    See README / Person C guide Step 3.2 for how to create it.
+      - name: Restore Documents folder
+        env:
+          DOCUMENTS_ZIP_B64: ${{ secrets.DOCUMENTS_ZIP_B64 }}
+        run: |
+          if [ -n "$DOCUMENTS_ZIP_B64" ]; then
+            echo "$DOCUMENTS_ZIP_B64" | base64 -d > documents.zip
+            unzip -o documents.zip -d .
+            echo "Documents restored:"
+            ls -la Documents/ || echo "Documents/ is empty."
+          else
+            echo "WARNING: DOCUMENTS_ZIP_B64 secret not set."
+            echo "Creating empty Documents folder."
+            mkdir -p Documents
+          fi
+
+      # ── 6. Run ingestion (builds all 3 indexes including graph_db) ─
+      - name: Ingest documents
+        run: |
+          echo "Running ingestion (vector + BM25 + graph)..."
+          python ingest_documents.py
+          echo "Ingestion complete."
+          ls -la chroma_db/ bm25_index/ graph_db/ || true
+
+      # ── 7. Run RAGAS evaluation in CI mode ─────────────────────────
+      #    Uses ci_sample_size from ragas_config.yaml (default: 20 rows).
+      #    Exit code 0 = pass, 1 = fail → build fails automatically.
+      - name: Run RAGAS evaluation
+        run: |
+          python evaluation/eval.py --ci
+
+      # ── 8. Upload results even if eval failed ──────────────────────
+      - name: Upload evaluation results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: eval-results-${{ github.run_id }}
+          path: evaluation/results/
+          retention-days: 30
+
+      # ── 9. Post score summary as PR comment ────────────────────────
+      - name: Post evaluation summary to PR
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = 'evaluation/results/latest.json';
+
+            if (!fs.existsSync(path)) {
+              console.log('No latest.json — skipping PR comment.');
+              return;
+            }
+
+            const r      = JSON.parse(fs.readFileSync(path, 'utf8'));
+            const passed = r.passed;
+            const s      = r.scores;
+            const t      = r.thresholds;
+            const icon   = passed ? '✅' : '❌';
+
+            const row = (label, key) => {
+              const score = s[key].toFixed(4);
+              const thr   = t[key].toFixed(2);
+              const ok    = s[key] >= t[key] ? '✅' : '❌';
+              return `| ${label} | \`${score}\` | \`${thr}\` | ${ok} |`;
+            };
+
+            const body = [
+              `## ${icon} ACSH-RAG Evaluation Report`,
+              '',
+              '| Metric | Score | Threshold | Status |',
+              '|--------|-------|-----------|--------|',
+              row('Faithfulness (anti-hallucination)', 'faithfulness'),
+              row('Answer Relevancy', 'answer_relevancy'),
+              row('Context Recall', 'context_recall'),
+              row('Context Precision', 'context_precision'),
+              '',
+              `**Overall average:** \`${r.overall_average.toFixed(4)}\`  |  **Threshold:** \`${r.overall_threshold}\``,
+              '',
+              `**Samples:** ${r.samples_evaluated}  |  **Mode:** ${r.mode}  |  **Run:** [#${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})`,
+              '',
+              passed
+                ? '✅ **This PR passes the evaluation gate.** Safe to merge.'
+                : '❌ **This PR fails the evaluation gate.** Faithfulness or overall score is below threshold. Fix the issue before merging.',
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner:        context.repo.owner,
+              repo:         context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body:         body,
+            });
