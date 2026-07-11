@@ -106,6 +106,10 @@ python compare_retrievers.py "your question"    # vector+BM25 vs graph-only vs h
 # Full pipeline (router → HyDE → retrieve → rerank → gate → cite → critic)
 python pipeline_api.py                          # runs built-in self-test queries
 
+# Web app (chat UI over the pipeline)
+pip install -r requirements_web.txt
+python web_app.py                               # → http://localhost:8000
+
 # Evaluation (RAGAS — separate deps)
 pip install -r requirements_c.txt
 python evaluation/eval.py
