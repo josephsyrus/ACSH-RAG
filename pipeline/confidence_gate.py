@@ -157,11 +157,32 @@ class ConfidenceGate:
 
                 temperature=0.4,
 
-                max_output_tokens=100,
+                max_output_tokens=150,
+
+                # gemini-3.5-flash is a thinking model: without this, reasoning
+                # consumes the token budget and the output gets truncated to a
+                # degenerate query (e.g. just "Google").
+                thinking_config=types.ThinkingConfig(thinking_budget=0),
             )
         )
 
-        new_query = response.text.strip()
+        new_query = (response.text or "").strip()
+
+        # Sanitise: keep only the first non-empty line, strip quotes/fences
+        for line in new_query.splitlines():
+            line = line.strip().strip('"').strip("'").strip("`").strip()
+            if line:
+                new_query = line
+                break
+
+        # Guard: a degenerate reformulation (empty or 1-2 words) retrieves
+        # garbage and causes false refusals. Fall back to the original query.
+        if len(new_query.split()) < 3:
+            print(
+                f"[ConfidenceGate] Degenerate reformulation "
+                f"'{new_query}' — falling back to original query."
+            )
+            return original_query
 
         print(
             f"[ConfidenceGate] Reformulated query "

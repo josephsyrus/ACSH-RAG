@@ -89,10 +89,19 @@ class HyDEGenerator:
                         temperature=0.3,
 
                         max_output_tokens=400,
+
+                        # gemini-3.5-flash is a thinking model: without this,
+                        # reasoning eats the budget and the passage comes back
+                        # empty or truncated mid-thought.
+                        thinking_config=types.ThinkingConfig(thinking_budget=0),
                     )
                 )
 
-                hypothesis = response.text.strip()
+                hypothesis = (response.text or "").strip()
+
+                if not hypothesis:
+                    print("[HyDE] Empty response. Using original query.")
+                    return query
 
                 print("[HyDE] Generated hypothetical document.")
 

@@ -60,29 +60,52 @@ class AdaptiveRouter:
         for attempt in range(3):
             try:
                 response = client.models.generate_content(
-                    model=self.model_name,   # make sure this is "gemini-2.0-flash"
+                    model=self.model_name,
                     contents=query,
                     config=types.GenerateContentConfig(
                         system_instruction=self.system_prompt,
                         temperature=0,
-                        max_output_tokens=20,
+                        max_output_tokens=64,
+                        # gemini-3.5-flash is a thinking model: without this,
+                        # reasoning consumes max_output_tokens and the text
+                        # part comes back EMPTY (raw='').
+                        thinking_config=types.ThinkingConfig(thinking_budget=0),
                     ),
                 )
 
-                # Safer extraction than response.text shortcut
+                # Safer extraction than response.text shortcut — join ALL parts
                 raw = ""
                 if response.candidates and response.candidates[0].content.parts:
-                    raw = response.candidates[0].content.parts[0].text.strip().lower()
-                    raw = raw.rstrip(".,!? \n")
+                    raw = " ".join(
+                        p.text for p in response.candidates[0].content.parts
+                        if getattr(p, "text", None)
+                    ).strip().lower()
 
                 print(f"  [Router] Raw: '{raw}'")
 
-                if raw not in self.VALID_ROUTES:
+                if not raw:
+                    # Empty output is transient (truncation/thinking) — retry
+                    print("  [Router] Empty response, retrying...")
+                    continue
+
+                # The prompt asks for JSON: {"route": "simple"}
+                route = None
+                try:
+                    clean = raw.replace("```json", "").replace("```", "").strip()
+                    route = json.loads(clean).get("route", "")
+                except (json.JSONDecodeError, AttributeError):
+                    # Fallback: find a valid route word anywhere in the text
+                    for candidate in self.VALID_ROUTES:
+                        if candidate in raw:
+                            route = candidate
+                            break
+
+                if route not in self.VALID_ROUTES:
                     print(f"  [Router] '{raw}' not valid, defaulting to 'simple'")
                     return "simple"
 
-                print(f"  [Router] Route: {raw}")
-                return raw
+                print(f"  [Router] Route: {route}")
+                return route
 
             except Exception as e:
                 if "429" in str(e):
