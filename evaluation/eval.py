@@ -195,6 +195,9 @@ def run_pipeline_on_dataset(df, retrieval_only=False):
     """
     answers  = []
     contexts = []
+    kept_idx = []   # df indices of rows that were actually evaluated —
+                    # needed to keep question/ground_truth aligned with
+                    # answers/contexts when rows are skipped mid-run
     skipped  = 0
 
     mode_label = "retrieval-only" if retrieval_only else "full pipeline"
@@ -269,6 +272,7 @@ def run_pipeline_on_dataset(df, retrieval_only=False):
 
             answers.append(answer)
             contexts.append(context)
+            kept_idx.append(i)
 
         except Exception as e:
             print(f"         → ERROR: {e}. Skipping.")
@@ -276,7 +280,7 @@ def run_pipeline_on_dataset(df, retrieval_only=False):
             continue
 
     print(f"\n  Done. {len(answers)} evaluated, {skipped} skipped.\n")
-    return answers, contexts
+    return answers, contexts, kept_idx
 
 
 # ── RAGAS evaluation ──────────────────────────────────────────────────────────
@@ -465,13 +469,16 @@ def main():
     df = load_golden_dataset(sample_size=sample_size, seed=args.seed)
 
     print("\n[Step 2/4] Running pipeline on each question...")
-    answers, contexts = run_pipeline_on_dataset(df, retrieval_only=args.retrieval_only)
+    answers, contexts, kept_idx = run_pipeline_on_dataset(df, retrieval_only=args.retrieval_only)
 
     if not answers:
         print("\nERROR: No answers generated. Check your pipeline and retrieval setup.")
         sys.exit(1)
 
-    df = df.iloc[:len(answers)].reset_index(drop=True)
+    # Keep only the rows that were actually evaluated (NOT the first N rows) —
+    # otherwise skipped rows shift alignment and RAGAS scores answers against
+    # the wrong question/ground_truth, zeroing context_recall/precision.
+    df = df.loc[kept_idx].reset_index(drop=True)
 
     print("\n[Step 3/4] Running RAGAS evaluation...")
     result = run_ragas_evaluation(df, answers, contexts, cfg)
