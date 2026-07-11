@@ -1,0 +1,3 @@
+# Web app (FastAPI chat UI over the pipeline)
+fastapi>=0.115
+uvicorn>=0.30
