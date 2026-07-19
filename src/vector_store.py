@@ -56,6 +56,8 @@ class VectorStore:
                     "doc_type":     c["doc_type"],
                     "chunk_index":  c["chunk_index"],
                     "total_chunks": c["total_chunks"],
+                    # ChromaDB rejects None metadata values → 0 means "no page".
+                    "page":         c.get("page") if c.get("page") is not None else 0,
                 }
                 for c in batch
             ]
@@ -107,11 +109,14 @@ class VectorStore:
             distance   = results["distances"][0][i]
             similarity = 1.0 - distance
 
+            md = results["metadatas"][0][i]
             output.append({
                 "chunk_id":     results["ids"][0][i],
                 "text":         results["documents"][0][i],
-                "metadata":     results["metadatas"][0][i],
+                "metadata":     md,
                 "vector_score": round(similarity, 6),
+                # surface page at top level too (0 → None so callers treat it uniformly)
+                "page":         md.get("page") or None,
             })
 
         return output

@@ -100,7 +100,12 @@ form.addEventListener("submit", async (e) => {
       <span class="chip ${esc(data.confidence)}">confidence: ${esc(data.confidence)}</span>
     </div>`;
     if (data.citations && data.citations.length) {
-      html += `<div class="cites">sources: ${data.citations.map(c => `<code>${esc(c)}</code>`).join(" ")}</div>`;
+      const src = data.citations.map(c => {
+        const file = esc(c.filename || c.chunk_id || "source");
+        const label = c.page ? `${file} — p.${esc(String(c.page))}` : file;
+        return `<code>${label}</code>`;
+      }).join(" ");
+      html += `<div class="cites">sources: ${src}</div>`;
     }
     wait.className = "msg bot";
     wait.innerHTML = html;

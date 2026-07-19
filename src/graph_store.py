@@ -146,6 +146,7 @@ class GraphStore:
                 doc_type     = chunk.get("doc_type", ""),
                 chunk_index  = chunk.get("chunk_index", 0),
                 total_chunks = chunk.get("total_chunks", 0),
+                page         = chunk.get("page"),
             )
             self._chunk_data[cid] = chunk
             doc_chunks[chunk.get("source", "")].append(chunk)

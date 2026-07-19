@@ -57,9 +57,23 @@ def run_pipeline(query: str) -> Dict:
     pipeline = get_pipeline()
     result   = pipeline.invoke(initial_state)
 
+    # Enrich each cited chunk_id with its filename + page for human-readable
+    # citations ("google_terms_of_service.pdf — p.4") instead of raw chunk IDs.
+    by_id = {c.get("chunk_id"): c for c in result.get("reranked_chunks", [])}
+    citations = []
+    for cid in result.get("cited_chunk_ids", []):
+        c    = by_id.get(cid, {})
+        meta = c.get("metadata") or {}
+        page = c.get("page") or meta.get("page") or None
+        citations.append({
+            "chunk_id": cid,
+            "filename": c.get("filename") or meta.get("filename") or "",
+            "page":     page,
+        })
+
     return {
         "answer":     result.get("final_answer",    "No answer generated."),
-        "citations":  result.get("cited_chunk_ids", []),
+        "citations":  citations,
         "route":      result.get("route",           "unknown"),
         "confidence": result.get("confidence",      "unknown"),
     }
