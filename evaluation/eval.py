@@ -35,19 +35,21 @@ def _load_ragas():
     try:
         from datasets import Dataset
         from ragas import evaluate
+        # Reference-free metrics only (EvaluationMode.qac = question+answer+
+        # contexts). No ground_truth needed → works with no golden dataset and
+        # on any uploaded document. context_recall is dropped (it needs a
+        # reference answer); context_utilization is its reference-free cousin.
         from ragas.metrics import (
             faithfulness,
             answer_relevancy,
-            context_recall,
-            context_precision,
+            context_utilization,
         )
         return {
-            "Dataset":           Dataset,
-            "evaluate":          evaluate,
-            "faithfulness":      faithfulness,
-            "answer_relevancy":  answer_relevancy,
-            "context_recall":    context_recall,
-            "context_precision": context_precision,
+            "Dataset":             Dataset,
+            "evaluate":            evaluate,
+            "faithfulness":        faithfulness,
+            "answer_relevancy":    answer_relevancy,
+            "context_utilization": context_utilization,
         }
     except ImportError as e:
         print(f"\nERROR: Missing dependency — {e}")
@@ -151,38 +153,36 @@ def _make_judge_llm(cfg):
 
 # ── Golden dataset ────────────────────────────────────────────────────────────
 
-def load_golden_dataset(sample_size=None, seed=42):
-    csv_path = os.path.join(os.path.dirname(__file__), "golden_dataset.csv")
+def load_questions(sample_size=None, seed=42):
+    """Load evaluation questions (reference-free — no ground-truth answers)."""
+    csv_path = os.path.join(os.path.dirname(__file__), "questions.csv")
     if not os.path.exists(csv_path):
         print(f"\nERROR: {csv_path} not found.")
-        print("Create evaluation/golden_dataset.csv with columns: question, ground_truth, source_file")
+        print("Create evaluation/questions.csv with a single 'question' column.")
         sys.exit(1)
 
     df = pd.read_csv(csv_path)
 
-    # Validate
-    for col in ["question", "ground_truth"]:
-        if col not in df.columns:
-            print(f"\nERROR: golden_dataset.csv is missing column '{col}'")
-            sys.exit(1)
+    if "question" not in df.columns:
+        print("\nERROR: questions.csv is missing column 'question'")
+        sys.exit(1)
 
     before = len(df)
-    df = df.dropna(subset=["question", "ground_truth"])
-    df = df[df["question"].str.strip() != ""]
-    df = df[df["ground_truth"].str.strip() != ""]
+    df = df.dropna(subset=["question"])
+    df = df[df["question"].str.strip() != ""].reset_index(drop=True)
     dropped = before - len(df)
     if dropped:
-        print(f"  Warning: dropped {dropped} rows with empty question or ground_truth.")
+        print(f"  Warning: dropped {dropped} empty question row(s).")
 
     if len(df) == 0:
-        print("\nERROR: No valid rows in golden_dataset.csv.")
+        print("\nERROR: No valid questions in questions.csv.")
         sys.exit(1)
 
     if sample_size and sample_size < len(df):
         df = df.sample(n=sample_size, random_state=seed).reset_index(drop=True)
-        print(f"  Sampled {sample_size} of {before} rows.")
+        print(f"  Sampled {sample_size} of {before} questions.")
 
-    print(f"  Loaded {len(df)} golden dataset rows.")
+    print(f"  Loaded {len(df)} evaluation question(s).")
     return df
 
 
@@ -292,17 +292,15 @@ def run_ragas_evaluation(df, answers, contexts, cfg):
 
     valid_count = len(answers)
     dataset = R["Dataset"].from_dict({
-        "question":     list(df["question"])[:valid_count],
-        "answer":       answers,
-        "contexts":     contexts,
-        "ground_truth": list(df["ground_truth"])[:valid_count],
+        "question": list(df["question"])[:valid_count],
+        "answer":   answers,
+        "contexts": contexts,
     })
 
     metrics = [
         R["faithfulness"],
         R["answer_relevancy"],
-        R["context_recall"],
-        R["context_precision"],
+        R["context_utilization"],
     ]
 
     judge = cfg.get("judge_model", "gemini-1.5-flash")
@@ -339,10 +337,9 @@ def generate_report(result, cfg, mode, sample_count, output_dir):
             return None
 
     scores = {
-        "faithfulness":      _safe(result["faithfulness"]),
-        "answer_relevancy":  _safe(result["answer_relevancy"]),
-        "context_recall":    _safe(result["context_recall"]),
-        "context_precision": _safe(result["context_precision"]),
+        "faithfulness":        _safe(result["faithfulness"]),
+        "answer_relevancy":    _safe(result["answer_relevancy"]),
+        "context_utilization": _safe(result["context_utilization"]),
     }
 
     # Check if any metric failed entirely
@@ -367,10 +364,9 @@ def generate_report(result, cfg, mode, sample_count, output_dir):
     print("=" * 62)
 
     labels = {
-        "faithfulness":      "Faithfulness      (anti-hallucination) ",
-        "answer_relevancy":  "Answer Relevancy  (on-topic)           ",
-        "context_recall":    "Context Recall    (retrieval coverage) ",
-        "context_precision": "Context Precision (retrieval relevance)",
+        "faithfulness":        "Faithfulness        (anti-hallucination)  ",
+        "answer_relevancy":    "Answer Relevancy    (on-topic)            ",
+        "context_utilization": "Context Utilization (used right context)  ",
     }
 
     for key, label in labels.items():
@@ -465,8 +461,8 @@ def main():
 
     print(f"\n  Mode: {mode}")
 
-    print("\n[Step 1/4] Loading golden dataset...")
-    df = load_golden_dataset(sample_size=sample_size, seed=args.seed)
+    print("\n[Step 1/4] Loading evaluation questions (reference-free)...")
+    df = load_questions(sample_size=sample_size, seed=args.seed)
 
     print("\n[Step 2/4] Running pipeline on each question...")
     answers, contexts, kept_idx = run_pipeline_on_dataset(df, retrieval_only=args.retrieval_only)

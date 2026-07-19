@@ -3,6 +3,8 @@
 # These thresholds control what counts as "passing".
 # Start at 0.70 for faithfulness. Adjust after seeing your first real scores.
 
+# Reference-free metrics only (no ground-truth answers required) — so this runs
+# on any corpus / uploaded document with no hand-labeled golden dataset.
 metrics:
   faithfulness:
     threshold: 0.70
@@ -12,13 +14,9 @@ metrics:
     threshold: 0.70
     description: "Does the answer actually address the question asked?"
 
-  context_recall:
+  context_utilization:
     threshold: 0.65
-    description: "Did retrieval find all the chunks needed to answer the question?"
-
-  context_precision:
-    threshold: 0.65
-    description: "Are retrieved chunks relevant (low noise ratio)?"
+    description: "Did the answer actually use the relevant retrieved chunks (reference-free precision)?"
 
 # Overall pass: the AVERAGE of all four metrics must exceed this
 overall_threshold: 0.70
