@@ -48,6 +48,7 @@ load_dotenv()
 class PipelineState(TypedDict):
     # Input
     original_query:  str
+    index_dirs:      Optional[Dict]   # per-session upload index, or None = global corpus
 
     # Router
     route:           str          # "direct" | "simple" | "complex"
@@ -139,6 +140,7 @@ def node_retrieve(state: PipelineState) -> dict:
         top_k=5,
         fetch_k=20,
         vector_query=state.get("hyde_text") or None,
+        index_dirs=state.get("index_dirs"),
     )
     print(f"  [Retrieve] Got {len(chunks)} chunks.")
     return {"raw_chunks": chunks}
@@ -158,6 +160,7 @@ def node_retrieve_multi(state: PipelineState) -> dict:
             top_k=5,
             fetch_k=20,
             vector_query=hyde_text,
+            index_dirs=state.get("index_dirs"),
         )
         for chunk in sub_chunks:
             all_chunks[chunk["chunk_id"]] = chunk   # later entries overwrite — fine

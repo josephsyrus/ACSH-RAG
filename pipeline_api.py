@@ -23,22 +23,26 @@ from pipeline.graph import get_pipeline
 from typing import Dict
 
 
-def run_pipeline(query: str) -> Dict:
+def run_pipeline(query: str, index_dirs: Dict = None) -> Dict:
     """
     Run the full ACSH-RAG pipeline for a query.
 
     Args:
         query (str): The raw user question.
+        index_dirs (dict, optional): per-session index set
+            {"chroma":..., "bm25":..., "graph":...} for an uploaded document.
+            None = the global corpus.
 
     Returns:
         dict with keys:
             answer      (str)  — final answer text
-            citations   (list) — chunk IDs cited in the answer
+            citations   (list) — {chunk_id, filename, page} cited in the answer
             route       (str)  — "direct" | "simple" | "complex"
             confidence  (str)  — "pass" | "low_confidence" | "refused"
     """
     initial_state = {
         "original_query":  query,
+        "index_dirs":      index_dirs,
         "route":           "",
         "active_query":    query,
         "sub_questions":   [],

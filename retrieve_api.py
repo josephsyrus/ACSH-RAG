@@ -38,21 +38,26 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from src.hybrid_retriever import HybridRetriever
-from typing import List, Dict
+from typing import List, Dict, Optional
 
-# Lazily initialised so import is fast — retriever loads on first call
-_retriever: HybridRetriever = None
+# The global (default) corpus directories.
+_DEFAULT_DIRS = {"chroma": "./chroma_db", "bm25": "./bm25_index", "graph": "./graph_db"}
+
+# One retriever per distinct index-dir set (global corpus + each uploaded
+# session), built lazily and cached. Keeps per-session uploads isolated.
+_retrievers: Dict[tuple, HybridRetriever] = {}
 
 
-def _get_retriever() -> HybridRetriever:
-    global _retriever
-    if _retriever is None:
-        _retriever = HybridRetriever(
-            chroma_persist_dir="./chroma_db",
-            bm25_index_dir="./bm25_index",
-            graph_db_dir="./graph_db",
+def _get_retriever(index_dirs: Optional[Dict[str, str]] = None) -> HybridRetriever:
+    dirs = index_dirs or _DEFAULT_DIRS
+    key  = (dirs["chroma"], dirs["bm25"], dirs["graph"])
+    if key not in _retrievers:
+        _retrievers[key] = HybridRetriever(
+            chroma_persist_dir=dirs["chroma"],
+            bm25_index_dir=dirs["bm25"],
+            graph_db_dir=dirs["graph"],
         )
-    return _retriever
+    return _retrievers[key]
 
 
 def retrieve_chunks(
@@ -63,9 +68,12 @@ def retrieve_chunks(
     bm25_weight:    float = 0.3,
     graph_weight:   float = 0.3,
     vector_query:   str   = None,
+    index_dirs:     Optional[Dict[str, str]] = None,
 ) -> List[Dict]:
+    """Retrieve from the global corpus, or from a per-session index set when
+    index_dirs={'chroma':..., 'bm25':..., 'graph':...} is provided."""
 
-    return _get_retriever().retrieve(
+    return _get_retriever(index_dirs).retrieve(
         query=query,
         top_k=top_k,
         fetch_k=fetch_k,

@@ -45,6 +45,10 @@
   }
   button:disabled { opacity: 0.5; cursor: wait; }
   .typing { color: var(--muted); font-style: italic; }
+  #srcbar { display: flex; align-items: center; gap: 12px; padding: 10px 22px; border-bottom: 1px solid var(--border); background: var(--panel); font-size: 13px; }
+  #uploadBtn { cursor: pointer; padding: 6px 12px; border: 1px solid var(--accent); border-radius: 8px; color: #cfc9ff; white-space: nowrap; }
+  #uploadBtn:hover { background: rgba(108,92,231,0.15); }
+  #srcStatus { color: var(--muted); }
 </style>
 </head>
 <body>
@@ -52,6 +56,14 @@
   <h1>ACSH-RAG</h1>
   <span>hybrid retrieval &middot; adaptive routing &middot; cited answers</span>
 </header>
+
+<div id="srcbar">
+  <label id="uploadBtn">
+    &#128196; Upload a document
+    <input id="fileInput" type="file" accept=".pdf,.md,.markdown,.txt" hidden>
+  </label>
+  <span id="srcStatus">Using the default corpus. Upload a PDF/text file to ask about your own document.</span>
+</div>
 
 <div id="chat">
   <div class="msg bot">Ask me anything about the ingested documents. Every answer is grounded in the sources and cited &mdash; if the documents don't cover it, I'll say so.</div>
@@ -67,6 +79,9 @@ const chat = document.getElementById("chat");
 const form = document.getElementById("form");
 const input = document.getElementById("q");
 const send = document.getElementById("send");
+const fileInput = document.getElementById("fileInput");
+const srcStatus = document.getElementById("srcStatus");
+let sessionId = null;
 
 function add(cls, html) {
   const d = document.createElement("div");
@@ -90,7 +105,7 @@ form.addEventListener("submit", async (e) => {
     const res = await fetch("/api/ask", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question: q }),
+      body: JSON.stringify({ question: q, session_id: sessionId }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || res.statusText);
@@ -116,6 +131,27 @@ form.addEventListener("submit", async (e) => {
     send.disabled = false;
     input.focus();
     chat.scrollTop = chat.scrollHeight;
+  }
+});
+
+fileInput.addEventListener("change", async () => {
+  const f = fileInput.files[0];
+  if (!f) return;
+  srcStatus.textContent = `Uploading & indexing "${f.name}"… (local, ~10-30s)`;
+  const fd = new FormData();
+  fd.append("file", f);
+  try {
+    const res = await fetch("/api/upload", { method: "POST", body: fd });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || res.statusText);
+    sessionId = data.session_id;
+    srcStatus.innerHTML = `&#128196; Answering from <strong>${esc(data.filename)}</strong> — ${data.chunks} chunks${data.pages ? `, ${data.pages} pages` : ""}.`;
+    add("bot", `Indexed <strong>${esc(data.filename)}</strong>. Ask me anything about it.`);
+  } catch (err) {
+    srcStatus.textContent = "Upload failed: " + esc(err.message);
+    add("bot", `<span class="chip error">upload error</span> ${esc(err.message)}`);
+  } finally {
+    fileInput.value = "";
   }
 });
 </script>
