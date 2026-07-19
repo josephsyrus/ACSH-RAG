@@ -170,10 +170,15 @@ class QueryDecomposer:
                 temperature=0,
 
                 max_output_tokens=400,
+
+                # gemini-3.5-flash is a thinking model: without this, reasoning
+                # eats the budget and the JSON array comes back truncated
+                # ("Unterminated string"), collapsing complex -> single query.
+                thinking_config=types.ThinkingConfig(thinking_budget=0),
             )
         )
 
-        raw = response.text.strip()
+        raw = (response.text or "").strip()
 
         try:
 

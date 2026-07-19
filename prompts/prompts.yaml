@@ -54,7 +54,9 @@ answer_grounded:
     Rules:
     - Answer only from the CONTEXT below. Do not use outside knowledge.
     - Every factual claim must come from a specific context chunk.
-    - After each claim, add an inline citation like [chunk_id].
+    - After each claim, cite the source using its EXACT bracket label as shown
+      in the context, e.g. [C21]. Copy the label verbatim. Use ONLY labels that
+      actually appear in the context — never invent one, never use a bare number.
     - If the context does not contain enough information to answer,
       respond with exactly the word: INSUFFICIENT_CONTEXT
     - Be concise. Do not pad the answer.

@@ -114,6 +114,10 @@ class CitationEnforcer:
                 system_instruction=system_prompt,
                 temperature=0.1,
                 max_output_tokens=1200,
+                # gemini-3.5-flash is a thinking model: disable thinking so the
+                # full budget goes to the answer (and its [C##] citations)
+                # instead of being truncated mid-generation.
+                thinking_config=types.ThinkingConfig(thinking_budget=0),
             ),
 
             contents=query,
@@ -154,7 +158,9 @@ class CitationEnforcer:
         chunks: List[Dict],
     ) -> Dict:
 
-        context = _build_context_string(chunks)
+        # _build_context_string returns (context_string, id_map) — unpack it,
+        # otherwise the critic is handed a stringified tuple as its context.
+        context, _ = _build_context_string(chunks)
 
         system_prompt = (
             self.prompts["self_rag_critic"]["system"]
@@ -177,6 +183,9 @@ class CitationEnforcer:
                 temperature=0,
 
                 max_output_tokens=1500,
+
+                # Disable thinking so the critic's JSON verdict isn't truncated.
+                thinking_config=types.ThinkingConfig(thinking_budget=0),
             )
         )
 
@@ -274,6 +283,8 @@ class CitationEnforcer:
                 temperature=0.3,
 
                 max_output_tokens=400,
+
+                thinking_config=types.ThinkingConfig(thinking_budget=0),
             )
         )
 
