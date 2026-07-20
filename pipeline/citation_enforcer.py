@@ -291,14 +291,17 @@ class CitationEnforcer:
         return response.text.strip()
     
     def _call_with_retry(self, **kwargs):
-        """Wrapper for all Gemini calls with 429 retry."""
+        """Wrapper for all Gemini calls, retrying transient 429 (rate limit)
+        and 503 (model overloaded / high demand) errors."""
         for attempt in range(3):
             try:
                 return client.models.generate_content(**kwargs)
             except Exception as e:
-                if "429" in str(e):
-                    wait = 20 * (attempt + 1)
-                    print(f"  [CitationEnforcer] Rate limit. Waiting {wait}s...")
+                msg = str(e)
+                if any(t in msg for t in ("429", "503", "UNAVAILABLE")):
+                    wait   = 10 * (attempt + 1)
+                    reason = "Rate limit" if "429" in msg else "Model busy"
+                    print(f"  [CitationEnforcer] {reason}. Waiting {wait}s...")
                     time.sleep(wait)
                 else:
                     raise

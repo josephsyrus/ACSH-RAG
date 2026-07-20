@@ -143,27 +143,21 @@ form.addEventListener("submit", async (e) => {
   send.disabled = true;
   const wait = add("bot", '<span class="loader"><span></span><span></span><span></span></span><span class="loadtxt">thinking… 0s</span>');
   const t0 = Date.now();
-  const timer = setInterval(() => {
+  let stageMsg = "thinking…";
+  const paint = () => {
     const el = wait.querySelector(".loadtxt");
-    if (!el) return;
-    const s = Math.round((Date.now() - t0) / 1000);
-    el.textContent = "thinking… " + s + "s" + (s > 8 ? " · LLM calls + first-time model load can take a while" : "");
-  }, 1000);
-  try {
-    const res = await fetch("/api/ask", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question: q, session_id: sessionId }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || res.statusText);
-    let html = renderMarkdown(data.answer);
+    if (el) el.textContent = stageMsg + " · " + Math.round((Date.now() - t0) / 1000) + "s";
+  };
+  const timer = setInterval(paint, 1000);
+
+  const renderDone = (evt) => {
+    let html = renderMarkdown(evt.answer);
     html += `<div class="meta">
-      <span class="chip">route: ${esc(data.route)}</span>
-      <span class="chip ${esc(data.confidence)}">confidence: ${esc(data.confidence)}</span>
+      <span class="chip">route: ${esc(evt.route)}</span>
+      <span class="chip ${esc(evt.confidence)}">confidence: ${esc(evt.confidence)}</span>
     </div>`;
-    if (data.citations && data.citations.length) {
-      const src = data.citations.map(c => {
+    if (evt.citations && evt.citations.length) {
+      const src = evt.citations.map(c => {
         const file = esc(c.filename || c.chunk_id || "source");
         const label = c.page ? `${file} — p.${esc(String(c.page))}` : file;
         return `<code>${label}</code>`;
@@ -172,6 +166,47 @@ form.addEventListener("submit", async (e) => {
     }
     wait.className = "msg bot";
     wait.innerHTML = html;
+  };
+
+  try {
+    const res = await fetch("/api/ask_stream", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question: q, session_id: sessionId }),
+    });
+    if (!res.ok || !res.body) {
+      let detail = res.statusText;
+      try { detail = (await res.json()).detail || detail; } catch (_) {}
+      throw new Error(detail);
+    }
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = "", finished = false;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      let idx;
+      while ((idx = buf.indexOf("\n\n")) >= 0) {
+        const frame = buf.slice(0, idx).trim();
+        buf = buf.slice(idx + 2);
+        if (!frame.startsWith("data:")) continue;
+        let evt;
+        try { evt = JSON.parse(frame.slice(5).trim()); } catch (_) { continue; }
+        if (evt.type === "stage") { stageMsg = evt.label; paint(); }
+        else if (evt.type === "done") { finished = true; renderDone(evt); }
+        else if (evt.type === "error") {
+          finished = true;
+          wait.className = "msg bot";
+          wait.innerHTML = `<span class="chip error">error</span> ${esc(evt.detail)}`;
+        }
+      }
+      chat.scrollTop = chat.scrollHeight;
+    }
+    if (!finished) {
+      wait.className = "msg bot";
+      wait.innerHTML = `<span class="chip error">error</span> the response stream ended unexpectedly.`;
+    }
   } catch (err) {
     wait.className = "msg bot";
     wait.innerHTML = `<span class="chip error">error</span> ${esc(err.message)}`;

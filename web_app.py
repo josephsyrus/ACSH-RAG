@@ -18,16 +18,45 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import Optional
 import uuid
 import shutil
+import json
 
 app = FastAPI(title="ACSH-RAG", docs_url="/api/docs", openapi_url="/api/openapi.json")
 
 SESSIONS_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sessions")
 SUPPORTED_EXT = {".pdf", ".md", ".markdown", ".txt"}
+
+# Reap stale upload sessions at startup (24h TTL / 200 max — see src.upload).
+try:
+    from src.upload import cleanup_sessions as _cleanup_sessions
+    _cleanup_sessions(SESSIONS_ROOT)
+except Exception:
+    pass
+
+# Friendly labels streamed to the UI as each LangGraph node runs.
+_STAGE_LABELS = {
+    "router":            "Classifying your question…",
+    "direct_answer":     "Answering from general knowledge…",
+    "decompose":         "Breaking it into sub-questions…",
+    "hyde_generate":     "Expanding the query…",
+    "retrieve":          "Searching the documents…",
+    "retrieve_multi":    "Searching the documents…",
+    "rerank":            "Reranking the best passages…",
+    "confidence_gate":   "Checking retrieval confidence…",
+    "reformulate":       "Refining and retrying…",
+    "citation_generate": "Writing a grounded answer…",
+    "self_rag_critic":   "Verifying each claim against the sources…",
+    "refuse":            "Preparing response…",
+}
+
+
+def _sse(obj: dict) -> str:
+    return "data: " + json.dumps(obj) + "\n\n"
 
 
 class AskRequest(BaseModel):
@@ -57,6 +86,7 @@ async def upload(file: UploadFile = File(...)):
     if ext not in SUPPORTED_EXT:
         raise HTTPException(status_code=400, detail=f"Unsupported file type '{ext}'. Use PDF, Markdown, or text.")
 
+    _cleanup_sessions(SESSIONS_ROOT)   # reap stale sessions before adding a new one
     session_id = uuid.uuid4().hex[:12]
     updir = os.path.join(SESSIONS_ROOT, session_id, "upload")
     os.makedirs(updir, exist_ok=True)
@@ -114,6 +144,70 @@ def ask(req: AskRequest):
                 "confidence": "quota_exhausted",
             }
         raise HTTPException(status_code=500, detail=msg)
+
+
+@app.post("/api/ask_stream")
+def ask_stream(req: AskRequest):
+    """Streaming /api/ask — emits Server-Sent Events: one {type:'stage'} per
+    pipeline node as it runs, then a final {type:'done'} with the answer."""
+    question = req.question.strip()
+    if not question:
+        raise HTTPException(status_code=400, detail="Question is empty.")
+    index_dirs = _resolve_session_dirs(req.session_id) if req.session_id else None
+
+    def gen():
+        try:
+            from pipeline.graph import get_pipeline
+            from pipeline_api import shape_citations
+            state = {
+                "original_query":  question,
+                "index_dirs":      index_dirs,
+                "route":           "",
+                "active_query":    question,
+                "sub_questions":   [],
+                "hyde_text":       "",
+                "raw_chunks":      [],
+                "reranked_chunks": [],
+                "gate_decision":   "",
+                "retry_count":     0,
+                "draft_answer":    "",
+                "cited_chunk_ids": [],
+                "critic_result":   {},
+                "final_answer":    "",
+                "confidence":      "",
+            }
+            final: dict = {}
+            for update in get_pipeline().stream(state):
+                for node, delta in (update or {}).items():
+                    if delta:
+                        final.update(delta)
+                    label = _STAGE_LABELS.get(node)
+                    if label:
+                        yield _sse({"type": "stage", "label": label})
+            yield _sse({
+                "type":       "done",
+                "answer":     final.get("final_answer", "No answer generated."),
+                "route":      final.get("route", "unknown"),
+                "confidence": final.get("confidence", "unknown"),
+                "citations":  shape_citations(final),
+            })
+        except Exception as e:
+            msg = str(e)
+            if any(tok in msg for tok in ("429", "RESOURCE_EXHAUSTED", "Max retries")):
+                yield _sse({
+                    "type": "done",
+                    "answer": ("The Gemini API quota is currently exhausted. "
+                               "Please try again later (free-tier quotas reset daily at midnight Pacific)."),
+                    "route": "error", "confidence": "quota_exhausted", "citations": [],
+                })
+            else:
+                yield _sse({"type": "error", "detail": msg})
+
+    return StreamingResponse(
+        gen(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 # Mounted last so /api/* routes above take precedence.
