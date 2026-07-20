@@ -61,6 +61,12 @@
   .loader span:nth-child(3) { animation-delay: .4s; }
   @keyframes bounce { 0%, 80%, 100% { transform: scale(.5); opacity: .5; } 40% { transform: scale(1); opacity: 1; } }
   .loadtxt { color: var(--muted); font-style: italic; font-size: 13px; vertical-align: middle; }
+  .stream { white-space: pre-wrap; }
+  sup.cite a { color: var(--accent); text-decoration: none; font-weight: 700; padding: 0 1px; cursor: pointer; }
+  sup.cite a:hover { text-decoration: underline; }
+  .srccard { display: inline-block; margin: 2px 6px 2px 0; }
+  .srccard sup { color: var(--accent); font-weight: 700; margin-right: 2px; }
+  .srccard:target { background: rgba(108,92,231,0.28); border-radius: 4px; padding: 1px 5px; }
 </style>
 </head>
 <body>
@@ -151,18 +157,29 @@ form.addEventListener("submit", async (e) => {
   const timer = setInterval(paint, 1000);
 
   const renderDone = (evt) => {
-    let html = renderMarkdown(evt.answer);
+    const cites = evt.citations || [];
+    // Map a chunk number (from chunk_id) -> its 1-based source index.
+    const numByChunk = {};
+    cites.forEach((c, i) => {
+      const m = String(c.chunk_id || "").match(/chunk_(\d+)/);
+      if (m) numByChunk[String(parseInt(m[1], 10))] = i + 1;
+    });
+    // Render markdown, then turn inline [C21] markers into clickable superscripts.
+    let html = renderMarkdown(evt.answer).replace(/\[C(\d+)\]/g, (mm, n) => {
+      const i = numByChunk[String(parseInt(n, 10))];
+      return i ? `<sup class="cite"><a href="#src-${i}">${i}</a></sup>` : "";
+    });
     html += `<div class="meta">
       <span class="chip">route: ${esc(evt.route)}</span>
       <span class="chip ${esc(evt.confidence)}">confidence: ${esc(evt.confidence)}</span>
     </div>`;
-    if (evt.citations && evt.citations.length) {
-      const src = evt.citations.map(c => {
+    if (cites.length) {
+      const cards = cites.map((c, i) => {
         const file = esc(c.filename || c.chunk_id || "source");
         const label = c.page ? `${file} — p.${esc(String(c.page))}` : file;
-        return `<code>${label}</code>`;
-      }).join(" ");
-      html += `<div class="cites">sources: ${src}</div>`;
+        return `<span class="srccard" id="src-${i + 1}"><sup>${i + 1}</sup> ${label}</span>`;
+      }).join("");
+      html += `<div class="cites">sources: ${cards}</div>`;
     }
     wait.className = "msg bot";
     wait.innerHTML = html;
@@ -181,7 +198,7 @@ form.addEventListener("submit", async (e) => {
     }
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
-    let buf = "", finished = false;
+    let buf = "", finished = false, streaming = false, answerText = "";
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
@@ -193,9 +210,20 @@ form.addEventListener("submit", async (e) => {
         if (!frame.startsWith("data:")) continue;
         let evt;
         try { evt = JSON.parse(frame.slice(5).trim()); } catch (_) { continue; }
-        if (evt.type === "stage") { stageMsg = evt.label; paint(); }
-        else if (evt.type === "done") { finished = true; renderDone(evt); }
-        else if (evt.type === "error") {
+        if (evt.type === "stage") {
+          if (!streaming) { stageMsg = evt.label; paint(); }
+        } else if (evt.type === "token") {
+          if (!streaming) {                       // first token: drop the loader, start the answer
+            streaming = true;
+            wait.className = "msg bot";
+            wait.innerHTML = '<span class="stream"></span>';
+          }
+          answerText += evt.text;
+          const sp = wait.querySelector(".stream");
+          if (sp) sp.textContent = answerText;    // textContent = safe + preserves newlines
+        } else if (evt.type === "done") {
+          finished = true; renderDone(evt);       // replace streamed text with rendered markdown + citations
+        } else if (evt.type === "error") {
           finished = true;
           wait.className = "msg bot";
           wait.innerHTML = `<span class="chip error">error</span> ${esc(evt.detail)}`;

@@ -97,7 +97,7 @@ class CitationEnforcer:
     # Step 1: Grounded Answer Generation
     # ─────────────────────────────────────────
 
-    def generate_grounded_answer(self, query, chunks):
+    def generate_grounded_answer(self, query, chunks, on_token=None):
 
         context, id_map = _build_context_string(chunks)
 
@@ -105,25 +105,31 @@ class CitationEnforcer:
             context=context
         )
 
-        response = self._call_with_retry(
-
-            model=self._answer_model_name,
-
-            config=types.GenerateContentConfig(
-
-                system_instruction=system_prompt,
-                temperature=0.1,
-                max_output_tokens=1200,
-                # gemini-3.5-flash is a thinking model: disable thinking so the
-                # full budget goes to the answer (and its [C##] citations)
-                # instead of being truncated mid-generation.
-                thinking_config=types.ThinkingConfig(thinking_budget=0),
-            ),
-
-            contents=query,
+        # gemini-3.5-flash is a thinking model: disable thinking so the full
+        # budget goes to the answer (and its [C##] citations).
+        cfg = types.GenerateContentConfig(
+            system_instruction=system_prompt,
+            temperature=0.1,
+            max_output_tokens=1200,
+            thinking_config=types.ThinkingConfig(thinking_budget=0),
         )
 
-        answer = response.text.strip() if response.text else ""
+        if on_token:
+            # Stream tokens as they are generated (for SSE token streaming).
+            answer = ""
+            for part in client.models.generate_content_stream(
+                model=self._answer_model_name, contents=query, config=cfg,
+            ):
+                piece = getattr(part, "text", None)
+                if piece:
+                    answer += piece
+                    on_token(piece)
+            answer = answer.strip()
+        else:
+            response = self._call_with_retry(
+                model=self._answer_model_name, config=cfg, contents=query,
+            )
+            answer = response.text.strip() if response.text else ""
 
         if "INSUFFICIENT_CONTEXT" in answer:
             return ("INSUFFICIENT_CONTEXT", [])

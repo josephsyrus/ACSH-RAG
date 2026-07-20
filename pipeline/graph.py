@@ -49,6 +49,7 @@ class PipelineState(TypedDict):
     # Input
     original_query:  str
     index_dirs:      Optional[Dict]   # per-session upload index, or None = global corpus
+    emit:            Optional[object] # SSE emitter emit(kind, payload) for token streaming, or None
 
     # Router
     route:           str          # "direct" | "simple" | "complex"
@@ -199,10 +200,14 @@ def node_reformulate(state: PipelineState) -> dict:
 
 
 def node_citation_generate(state: PipelineState) -> dict:
-    """Generate grounded answer with inline citations using Gemini Pro."""
+    """Generate grounded answer with inline citations. Streams tokens via
+    state['emit'] when present (SSE)."""
+    emit     = state.get("emit")
+    on_token = (lambda t: emit("token", t)) if emit else None
     answer, cited_ids = _citation.generate_grounded_answer(
         query=state["active_query"],
         chunks=state["reranked_chunks"],
+        on_token=on_token,
     )
 
     if answer == "INSUFFICIENT_CONTEXT":

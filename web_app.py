@@ -25,6 +25,8 @@ from typing import Optional
 import uuid
 import shutil
 import json
+import queue
+import threading
 
 app = FastAPI(title="ACSH-RAG", docs_url="/api/docs", openapi_url="/api/openapi.json")
 
@@ -155,13 +157,20 @@ def ask_stream(req: AskRequest):
         raise HTTPException(status_code=400, detail="Question is empty.")
     index_dirs = _resolve_session_dirs(req.session_id) if req.session_id else None
 
-    def gen():
+    # The pipeline runs in a worker thread and pushes events onto this queue:
+    # ('stage', label) between nodes, ('token', text) from inside the answer
+    # node, then ('done', payload) / ('error', msg). The request thread below
+    # drains the queue and serialises each as an SSE frame.
+    q: "queue.Queue" = queue.Queue()
+
+    def worker():
         try:
             from pipeline.graph import get_pipeline
             from pipeline_api import shape_citations
             state = {
                 "original_query":  question,
                 "index_dirs":      index_dirs,
+                "emit":            lambda kind, payload: q.put((kind, payload)),
                 "route":           "",
                 "active_query":    question,
                 "sub_questions":   [],
@@ -183,25 +192,40 @@ def ask_stream(req: AskRequest):
                         final.update(delta)
                     label = _STAGE_LABELS.get(node)
                     if label:
-                        yield _sse({"type": "stage", "label": label})
-            yield _sse({
-                "type":       "done",
+                        q.put(("stage", label))
+            q.put(("done", {
                 "answer":     final.get("final_answer", "No answer generated."),
                 "route":      final.get("route", "unknown"),
                 "confidence": final.get("confidence", "unknown"),
                 "citations":  shape_citations(final),
-            })
+            }))
         except Exception as e:
             msg = str(e)
             if any(tok in msg for tok in ("429", "RESOURCE_EXHAUSTED", "Max retries")):
-                yield _sse({
-                    "type": "done",
+                q.put(("done", {
                     "answer": ("The Gemini API quota is currently exhausted. "
                                "Please try again later (free-tier quotas reset daily at midnight Pacific)."),
                     "route": "error", "confidence": "quota_exhausted", "citations": [],
-                })
+                }))
             else:
-                yield _sse({"type": "error", "detail": msg})
+                q.put(("error", msg))
+        finally:
+            q.put(("__end__", None))
+
+    def gen():
+        threading.Thread(target=worker, daemon=True).start()
+        while True:
+            kind, payload = q.get()
+            if kind == "__end__":
+                break
+            if kind == "stage":
+                yield _sse({"type": "stage", "label": payload})
+            elif kind == "token":
+                yield _sse({"type": "token", "text": payload})
+            elif kind == "done":
+                yield _sse({"type": "done", **payload})
+            elif kind == "error":
+                yield _sse({"type": "error", "detail": payload})
 
     return StreamingResponse(
         gen(),
