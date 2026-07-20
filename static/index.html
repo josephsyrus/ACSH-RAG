@@ -49,6 +49,12 @@
   #uploadBtn { cursor: pointer; padding: 6px 12px; border: 1px solid var(--accent); border-radius: 8px; color: #cfc9ff; white-space: nowrap; }
   #uploadBtn:hover { background: rgba(108,92,231,0.15); }
   #srcStatus { color: var(--muted); }
+  .msg p { margin: 0 0 8px; white-space: normal; }
+  .msg p:last-child { margin-bottom: 0; }
+  .msg ul { margin: 6px 0 6px 0; padding-left: 22px; white-space: normal; }
+  .msg li { margin: 3px 0; white-space: normal; }
+  .msg strong { color: #fff; }
+  .msg code { background: var(--bg); padding: 1px 5px; border-radius: 4px; font-size: 0.92em; }
 </style>
 </head>
 <body>
@@ -93,6 +99,35 @@ function add(cls, html) {
 }
 const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 
+// Minimal, safe Markdown → HTML (escapes first, then renders bold, inline code,
+// and nested bullet lists — the shapes the LLM actually produces).
+function renderMarkdown(md) {
+  const inline = s => esc(s)
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/`([^`]+?)`/g, "<code>$1</code>");
+  const lines = (md || "").replace(/\r\n/g, "\n").split("\n");
+  const out = [], stack = [];
+  let para = [];
+  const flushP = () => { if (para.length) { out.push("<p>" + para.map(inline).join("<br>") + "</p>"); para = []; } };
+  const closeAll = () => { while (stack.length) { out.push("</ul>"); stack.pop(); } };
+  for (const raw of lines) {
+    const m = raw.match(/^(\s*)[*\-]\s+(.*)$/);
+    if (m) {
+      flushP();
+      const ind = m[1].length;
+      while (stack.length && stack[stack.length - 1] > ind) { out.push("</ul>"); stack.pop(); }
+      if (!stack.length || stack[stack.length - 1] < ind) { out.push("<ul>"); stack.push(ind); }
+      out.push("<li>" + inline(m[2]) + "</li>");
+    } else if (raw.trim() === "") {
+      flushP();
+    } else {
+      closeAll(); para.push(raw.trim());
+    }
+  }
+  flushP(); closeAll();
+  return out.join("");
+}
+
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
   const q = input.value.trim();
@@ -109,7 +144,7 @@ form.addEventListener("submit", async (e) => {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || res.statusText);
-    let html = esc(data.answer);
+    let html = renderMarkdown(data.answer);
     html += `<div class="meta">
       <span class="chip">route: ${esc(data.route)}</span>
       <span class="chip ${esc(data.confidence)}">confidence: ${esc(data.confidence)}</span>
