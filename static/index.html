@@ -55,6 +55,12 @@
   .msg li { margin: 3px 0; white-space: normal; }
   .msg strong { color: #fff; }
   .msg code { background: var(--bg); padding: 1px 5px; border-radius: 4px; font-size: 0.92em; }
+  .loader { display: inline-flex; gap: 4px; margin-right: 9px; vertical-align: middle; }
+  .loader span { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: bounce 1.2s infinite ease-in-out; }
+  .loader span:nth-child(2) { animation-delay: .2s; }
+  .loader span:nth-child(3) { animation-delay: .4s; }
+  @keyframes bounce { 0%, 80%, 100% { transform: scale(.5); opacity: .5; } 40% { transform: scale(1); opacity: 1; } }
+  .loadtxt { color: var(--muted); font-style: italic; font-size: 13px; vertical-align: middle; }
 </style>
 </head>
 <body>
@@ -135,7 +141,14 @@ form.addEventListener("submit", async (e) => {
   add("user", esc(q));
   input.value = "";
   send.disabled = true;
-  const wait = add("bot typing", "Thinking&hellip; (routing &rarr; retrieval &rarr; rerank &rarr; cite &rarr; verify; first question loads models and can take a couple of minutes)");
+  const wait = add("bot", '<span class="loader"><span></span><span></span><span></span></span><span class="loadtxt">thinking… 0s</span>');
+  const t0 = Date.now();
+  const timer = setInterval(() => {
+    const el = wait.querySelector(".loadtxt");
+    if (!el) return;
+    const s = Math.round((Date.now() - t0) / 1000);
+    el.textContent = "thinking… " + s + "s" + (s > 8 ? " · LLM calls + first-time model load can take a while" : "");
+  }, 1000);
   try {
     const res = await fetch("/api/ask", {
       method: "POST",
@@ -163,6 +176,7 @@ form.addEventListener("submit", async (e) => {
     wait.className = "msg bot";
     wait.innerHTML = `<span class="chip error">error</span> ${esc(err.message)}`;
   } finally {
+    clearInterval(timer);
     send.disabled = false;
     input.focus();
     chat.scrollTop = chat.scrollHeight;
