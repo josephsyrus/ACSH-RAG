@@ -39,24 +39,41 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from src.hybrid_retriever import HybridRetriever
 from typing import List, Dict, Optional
+from collections import OrderedDict
 
 # The global (default) corpus directories.
 _DEFAULT_DIRS = {"chroma": "./chroma_db", "bm25": "./bm25_index", "graph": "./graph_db"}
+_GLOBAL_KEY   = (_DEFAULT_DIRS["chroma"], _DEFAULT_DIRS["bm25"], _DEFAULT_DIRS["graph"])
 
 # One retriever per distinct index-dir set (global corpus + each uploaded
-# session), built lazily and cached. Keeps per-session uploads isolated.
-_retrievers: Dict[tuple, HybridRetriever] = {}
+# session). LRU-capped so many uploads don't accumulate retrievers (each holds
+# BM25 + graph in memory) without bound. The global corpus is never evicted.
+_MAX_RETRIEVERS = 12
+_retrievers: "OrderedDict[tuple, HybridRetriever]" = OrderedDict()
 
 
 def _get_retriever(index_dirs: Optional[Dict[str, str]] = None) -> HybridRetriever:
     dirs = index_dirs or _DEFAULT_DIRS
     key  = (dirs["chroma"], dirs["bm25"], dirs["graph"])
-    if key not in _retrievers:
-        _retrievers[key] = HybridRetriever(
-            chroma_persist_dir=dirs["chroma"],
-            bm25_index_dir=dirs["bm25"],
-            graph_db_dir=dirs["graph"],
-        )
+
+    if key in _retrievers:
+        _retrievers.move_to_end(key)        # mark most-recently-used
+        return _retrievers[key]
+
+    _retrievers[key] = HybridRetriever(
+        chroma_persist_dir=dirs["chroma"],
+        bm25_index_dir=dirs["bm25"],
+        graph_db_dir=dirs["graph"],
+    )
+
+    # Evict least-recently-used session retrievers beyond the cap (keep global).
+    while len(_retrievers) > _MAX_RETRIEVERS:
+        for k in list(_retrievers.keys()):
+            if k != _GLOBAL_KEY:
+                _retrievers.pop(k)
+                break
+        else:
+            break   # only the global retriever remains
     return _retrievers[key]
 
 

@@ -9,6 +9,8 @@ Fully local — no Gemini/LLM calls (embeddings + BM25 + spaCy graph only).
 """
 
 import os
+import time
+import shutil
 from pathlib import Path
 from typing import Dict, Optional
 
@@ -87,3 +89,46 @@ def ingest_upload(
         "pages":    n_pages,
         "dirs":     dirs,
     }
+
+
+def cleanup_sessions(
+    sessions_root: str,
+    ttl_hours: float = 24.0,
+    max_sessions: int = 200,
+) -> int:
+    """
+    Delete session directories older than ttl_hours (by mtime), and cap the
+    total number of sessions (oldest evicted first). Returns how many were
+    removed. Safe to call on every upload / at startup — no-op if root missing.
+
+    NOTE: mtime refreshes on ingestion but not on query, so a session queried
+    continuously for >ttl_hours could be reaped. Fine for typical short-lived
+    upload sessions; raise ttl_hours if you need longer-lived ones.
+    """
+    if not os.path.isdir(sessions_root):
+        return 0
+
+    cutoff  = time.time() - ttl_hours * 3600
+    entries = []
+    for name in os.listdir(sessions_root):
+        p = os.path.join(sessions_root, name)
+        if not os.path.isdir(p):
+            continue
+        try:
+            entries.append((os.path.getmtime(p), p))
+        except OSError:
+            continue
+
+    removed = 0
+    for mtime, p in entries:
+        if mtime < cutoff:
+            shutil.rmtree(p, ignore_errors=True)
+            removed += 1
+
+    survivors = sorted((m, p) for m, p in entries if os.path.exists(p))
+    while len(survivors) > max_sessions:
+        _, p = survivors.pop(0)   # oldest
+        shutil.rmtree(p, ignore_errors=True)
+        removed += 1
+
+    return removed

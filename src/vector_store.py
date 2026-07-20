@@ -7,6 +7,19 @@ from typing import List, Dict
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 
 
+# Module-level cache so ALL VectorStore instances (the global corpus + every
+# uploaded session) share ONE embedding model instead of each loading ~90MB.
+_MODEL_CACHE: Dict[str, SentenceTransformer] = {}
+
+
+def _get_shared_model(model_name: str) -> SentenceTransformer:
+    if model_name not in _MODEL_CACHE:
+        print(f"Loading embedding model '{model_name}' (shared, one-time)...")
+        print("  (First run downloads ~90MB — takes 1–2 minutes.)")
+        _MODEL_CACHE[model_name] = SentenceTransformer(model_name)
+        print("  Model loaded.")
+    return _MODEL_CACHE[model_name]
+
 
 class VectorStore:
     def __init__(
@@ -17,10 +30,8 @@ class VectorStore:
         self.persist_directory = persist_directory
         os.makedirs(persist_directory, exist_ok=True)
 
-        print(f"Loading embedding model '{model_name}'...")
-        print("  (First run downloads ~90MB — takes 1–2 minutes.)")
-        self.model = SentenceTransformer(model_name)
-        print("  Model loaded.")
+        # Shared across every session — loaded at most once per process.
+        self.model = _get_shared_model(model_name)
 
         # PersistentClient saves everything to disk automatically
         self.client = chromadb.PersistentClient(path=persist_directory)
