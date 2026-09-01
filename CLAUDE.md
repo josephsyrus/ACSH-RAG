@@ -80,7 +80,7 @@ A hybrid Retrieval-Augmented Generation system over local documents (PDF / Markd
 **Retrieval** — `retrieve_api.py::retrieve_chunks` → `src/hybrid_retriever.py`: runs all three retrievers and merges with 3-way Reciprocal Rank Fusion (default weights: vector 0.4 / bm25 0.3 / graph 0.3).
 
 **Pipeline** — `pipeline_api.py::run_pipeline` → `pipeline/graph.py`: a LangGraph state machine.
-- `router` classifies the query → `direct` | `simple` | `complex` (`pipeline/router.py`)
+- `router` classifies the query → `simple` | `complex` (`pipeline/router.py`)
 - simple: `hyde → retrieve → rerank → confidence_gate → citation → self_rag_critic`
 - complex: `decompose → retrieve_multi → …` (same tail from rerank)
 - low confidence triggers a corrective reformulate-and-retry loop (CRAG), up to `MAX_RETRIES`

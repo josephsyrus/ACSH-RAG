@@ -254,8 +254,17 @@ fileInput.addEventListener("change", async () => {
   fd.append("file", f);
   try {
     const res = await fetch("/api/upload", { method: "POST", body: fd });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || res.statusText);
+    const body = await res.text();
+    let data = null;
+    try {
+      data = body ? JSON.parse(body) : null;
+    } catch {
+      // A proxy or unexpected server failure may return plain text/HTML.
+    }
+    if (!res.ok) {
+      throw new Error(data?.detail || body || `Upload failed (${res.status}).`);
+    }
+    if (!data) throw new Error("Upload succeeded but returned an invalid response.");
     sessionId = data.session_id;
     srcStatus.innerHTML = `&#128196; Answering from <strong>${esc(data.filename)}</strong> — ${data.chunks} chunks${data.pages ? `, ${data.pages} pages` : ""}.`;
     add("bot", `Indexed <strong>${esc(data.filename)}</strong>. Ask me anything about it.`);

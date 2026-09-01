@@ -7,8 +7,6 @@ router:
     Classify the user question into one category and respond with JSON only.
 
     Categories:
-    - "direct"  : answerable from general knowledge, no documents needed.
-                  Example: "What is 2+2?", "Who is James Clear?"
     - "simple"  : single focused question needing document lookup.
                   Example: "What is the two minute rule?"
     - "complex" : has multiple sub-parts, comparisons, or asks to explain
@@ -16,7 +14,7 @@ router:
                   Example: "Compare X with Y and explain which the book recommends"
 
     Respond with ONLY this JSON and nothing else:
-    {"route": "direct"} or {"route": "simple"} or {"route": "complex"}
+    {"route": "simple"} or {"route": "complex"}
 
 hyde:
   system: |
@@ -63,11 +61,6 @@ answer_grounded:
 
     CONTEXT:
     {context}
-
-answer_direct:
-  system: |
-    You are a helpful assistant. Answer the following question from your
-    general knowledge. Be concise and accurate.
 
 self_rag_critic:
   system: |

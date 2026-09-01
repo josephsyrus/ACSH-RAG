@@ -132,7 +132,7 @@ def print_comparison(result: dict) -> None:
 
 def main():
     if len(sys.argv) > 1:
-        # Direct query mode
+        # Command-line query mode
         query = " ".join(sys.argv[1:])
         result = compare(query)
         print_comparison(result)

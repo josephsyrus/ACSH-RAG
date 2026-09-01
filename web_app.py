@@ -27,8 +27,10 @@ import shutil
 import json
 import queue
 import threading
+import logging
 
 app = FastAPI(title="ACSH-RAG", docs_url="/api/docs", openapi_url="/api/openapi.json")
+logger = logging.getLogger(__name__)
 
 SESSIONS_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sessions")
 SUPPORTED_EXT = {".pdf", ".md", ".markdown", ".txt"}
@@ -43,7 +45,6 @@ except Exception:
 # Friendly labels streamed to the UI as each LangGraph node runs.
 _STAGE_LABELS = {
     "router":            "Classifying your question…",
-    "direct_answer":     "Answering from general knowledge…",
     "decompose":         "Breaking it into sub-questions…",
     "hyde_generate":     "Expanding the query…",
     "retrieve":          "Searching the documents…",
@@ -88,21 +89,27 @@ async def upload(file: UploadFile = File(...)):
     if ext not in SUPPORTED_EXT:
         raise HTTPException(status_code=400, detail=f"Unsupported file type '{ext}'. Use PDF, Markdown, or text.")
 
-    _cleanup_sessions(SESSIONS_ROOT)   # reap stale sessions before adding a new one
     session_id = uuid.uuid4().hex[:12]
-    updir = os.path.join(SESSIONS_ROOT, session_id, "upload")
-    os.makedirs(updir, exist_ok=True)
-    dest = os.path.join(updir, os.path.basename(file.filename))
-    with open(dest, "wb") as f:
-        shutil.copyfileobj(file.file, f)
+    session_root = os.path.join(SESSIONS_ROOT, session_id)
+    original_filename = os.path.basename(file.filename or f"document{ext}")
 
     try:
+        _cleanup_sessions(SESSIONS_ROOT)   # reap stale sessions before adding a new one
+        updir = os.path.join(session_root, "upload")
+        os.makedirs(updir, exist_ok=True)
+        # Keep the physical path short for Windows' path-length limit while
+        # preserving the user's original filename in response/index metadata.
+        dest = os.path.join(updir, f"document{ext}")
+        with open(dest, "wb") as f:
+            shutil.copyfileobj(file.file, f)
+
         # Local ingestion (embeddings + BM25 + spaCy graph) — no Gemini/quota.
         from src.upload import ingest_upload
-        stats = ingest_upload(dest, os.path.join(SESSIONS_ROOT, session_id))
-    except Exception as e:
-        shutil.rmtree(os.path.join(SESSIONS_ROOT, session_id), ignore_errors=True)
-        raise HTTPException(status_code=400, detail=f"Could not process document: {e}")
+        stats = ingest_upload(dest, session_root, display_filename=original_filename)
+    except Exception as exc:
+        shutil.rmtree(session_root, ignore_errors=True)
+        logger.exception("Upload failed for %r", file.filename)
+        raise HTTPException(status_code=400, detail=f"Could not process document: {exc}") from exc
 
     return {
         "session_id": session_id,

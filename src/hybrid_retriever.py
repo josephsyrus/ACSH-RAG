@@ -5,6 +5,13 @@ from .bm25_retriever import BM25Retriever
 from .graph_store import GraphStore
 
 
+# Below this graph confidence the graph arm is dropped from fusion entirely.
+MIN_GRAPH_CONFIDENCE = 0.15
+# Above the floor, never scale the graph arm below this fraction of its weight —
+# a partial-but-real entity match should still count for something.
+MIN_GRAPH_SCALE = 0.35
+
+
 # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # RRF Merge Function
 # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -154,17 +161,31 @@ class HybridRetriever:
         print(f"        â†’ {len(bm25_results)} candidates")
 
         print("  [3/4] Graph entity search...")
-        graph_results = self.graph_store.search(query, top_k=fetch_k)
-        print(f"        â†’ {len(graph_results)} candidates")
+        graph_results, graph_conf = self.graph_store.search_with_confidence(query, top_k=fetch_k)
+        print(f"        â†’ {len(graph_results)} candidates (confidence {graph_conf:.2f})")
+
+        # Scale the graph arm by how much of the query it actually recognised.
+        # A query with no resolvable entities used to contribute 20 junk results
+        # at full weight; now it contributes nothing.
+        # Only gate the graph when another arm can carry the query — graph-only
+        # mode (graph_retrieve_api.py) must still return whatever it found.
+        if (vector_weight + bm25_weight) > 0 and graph_conf < MIN_GRAPH_CONFIDENCE:
+            effective_graph_weight = 0.0
+            fused_graph_results    = None
+            if graph_results:
+                print(f"        â†’ confidence below {MIN_GRAPH_CONFIDENCE}; graph arm disabled for this query")
+        else:
+            effective_graph_weight = graph_weight * max(MIN_GRAPH_SCALE, graph_conf)
+            fused_graph_results    = graph_results
 
         print("  [4/4] Merging with 3-way Reciprocal Rank Fusion...")
         merged = reciprocal_rank_fusion(
             vector_results,
             bm25_results,
-            graph_results,
+            fused_graph_results,
             vector_weight=vector_weight,
             bm25_weight=bm25_weight,
-            graph_weight=graph_weight,
+            graph_weight=effective_graph_weight,
         )
 
         final = merged[:top_k]

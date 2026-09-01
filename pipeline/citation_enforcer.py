@@ -88,10 +88,7 @@ class CitationEnforcer:
 
         self.prompts = _load_prompts()
 
-        # KEEPING requested models
         self._answer_model_name = "gemini-3.5-flash"
-
-        self._fast_model_name = "gemini-3.5-flash"
 
     # ─────────────────────────────────────────
     # Step 1: Grounded Answer Generation
@@ -262,40 +259,6 @@ class CitationEnforcer:
 
         return result
 
-    # ─────────────────────────────────────────
-    # Step 3: Direct Answer
-    # ─────────────────────────────────────────
-
-    def generate_direct_answer(
-        self,
-        query: str
-    ) -> str:
-        """
-        Direct answer without retrieval.
-        """
-
-        response = self._call_with_retry(
-
-            model=self._fast_model_name,
-
-            contents=query,
-
-            config=types.GenerateContentConfig(
-
-                system_instruction=(
-                    self.prompts["answer_direct"]["system"]
-                ),
-
-                temperature=0.3,
-
-                max_output_tokens=400,
-
-                thinking_config=types.ThinkingConfig(thinking_budget=0),
-            )
-        )
-
-        return response.text.strip()
-    
     def _call_with_retry(self, **kwargs):
         """Wrapper for all Gemini calls, retrying transient 429 (rate limit)
         and 503 (model overloaded / high demand) errors."""

@@ -1,6 +1,7 @@
 import os
 import json
 import pickle
+import re
 from rank_bm25 import BM25Okapi
 from typing import List, Dict
 
@@ -10,7 +11,19 @@ from typing import List, Dict
 # ─────────────────────────────────────────────
 
 def tokenize(text: str) -> List[str]:
-    return text.lower().split()
+    """Tokenize normally, with character grams for collapsed PDF words.
+
+    A damaged PDF text layer may emit ``Prayertherapy`` rather than
+    ``prayer therapy``. Character grams provide a narrow fallback match between
+    that token and a user query containing the two proper words, while normal
+    tokens remain the primary BM25 signal.
+    """
+    words = re.findall(r"[a-z0-9]+", text.lower())
+    tokens = list(words)
+    for word in words:
+        if len(word) >= 6:
+            tokens.extend(f"__cg_{word[i:i + 4]}" for i in range(len(word) - 3))
+    return tokens
 
 
 # ─────────────────────────────────────────────

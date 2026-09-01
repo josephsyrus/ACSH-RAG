@@ -2,11 +2,15 @@ chroma_db/
 bm25_index/
 graph_db/
 venv/
+.venv/
 __pycache__/
 *.pyc
+*.pyo
 Documents/
+documents/
 .env
-.venv/
+.env.*
+!.env.example
 
 # graphify — keep the queryable graph, report, and viz; ignore regenerable cache/metadata
 graphify-out/*
@@ -16,4 +20,7 @@ graphify-out/*
 
 # Per-session uploaded documents + their isolated indexes
 sessions/
+
+# Local OCR results — regenerable, keyed by document content hash
+ocr_cache/
 

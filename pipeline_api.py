@@ -10,7 +10,7 @@ Usage:
 
     print(result["answer"])       # Final grounded answer
     print(result["citations"])    # List of chunk_ids cited
-    print(result["route"])        # "direct" | "simple" | "complex"
+    print(result["route"])        # "simple" | "complex"
     print(result["confidence"])   # "pass" | "low_confidence" | "refused"
 """
 
@@ -53,7 +53,7 @@ def run_pipeline(query: str, index_dirs: Dict = None) -> Dict:
         dict with keys:
             answer      (str)  — final answer text
             citations   (list) — {chunk_id, filename, page} cited in the answer
-            route       (str)  — "direct" | "simple" | "complex"
+            route       (str)  — "simple" | "complex"
             confidence  (str)  — "pass" | "low_confidence" | "refused"
     """
     initial_state = {

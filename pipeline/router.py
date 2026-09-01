@@ -45,7 +45,6 @@ def _load_prompt(key: str) -> str:
 class AdaptiveRouter:
 
     VALID_ROUTES = {
-        "direct",
         "simple",
         "complex"
     }

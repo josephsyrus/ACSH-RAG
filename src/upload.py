@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Dict, Optional
 
 from .ingestion import load_pdf, load_markdown, chunk_documents
+from .ocr import OcrEngine
 from .vector_store import VectorStore
 from .bm25_retriever import BM25Retriever
 from .graph_store import GraphStore
@@ -31,27 +32,40 @@ def session_dirs(session_root: str) -> Dict[str, str]:
     }
 
 
-def _load_one(file_path: str) -> Dict:
+def _load_one(file_path: str, display_filename: Optional[str] = None) -> Dict:
     ext = Path(file_path).suffix.lower()
     if ext == ".pdf":
-        pages = load_pdf(file_path)          # list[str], one per page
+        # load_pdf returns both page text and per-page OCR flags.  Keep the
+        # latter so chunk_documents can preserve its OCR provenance metadata.
+        # Supplying the engine makes image-only/scanned pages usable in uploads,
+        # just as they already are during batch ingestion.
+        ocr_engine = OcrEngine()
+        ocr_available = ocr_engine.available()
+        pages, page_ocr = load_pdf(file_path, ocr_engine=ocr_engine)
         text  = "\n".join(pages)
         dtype = "pdf"
     elif ext in {".md", ".markdown", ".txt"}:
         text  = load_markdown(file_path)
         pages = None
+        page_ocr = None
         dtype = "text"
     else:
         raise ValueError(f"Unsupported file type: {ext}")
 
+    if not text.strip() and ext == ".pdf" and not ocr_available:
+        raise ValueError(
+            "Document has no embedded text and local OCR is unavailable. "
+            "Install the OCR dependencies with `pip install -r requirements_web.txt`."
+        )
     if not text.strip():
         raise ValueError("Document has no extractable text.")
 
     return {
         "text":     text,
         "pages":    pages,
+        "page_ocr": page_ocr,
         "source":   str(Path(file_path).resolve()),
-        "filename": Path(file_path).name,
+        "filename": display_filename or Path(file_path).name,
         "type":     dtype,
     }
 
@@ -61,6 +75,7 @@ def ingest_upload(
     session_root: str,
     chunk_size: int = 250,
     overlap: int = 50,
+    display_filename: Optional[str] = None,
 ) -> Dict:
     """
     Ingest ONE file into a session's isolated indexes. Returns stats dict:
@@ -70,7 +85,7 @@ def ingest_upload(
     """
     dirs = session_dirs(session_root)
 
-    doc    = _load_one(file_path)
+    doc    = _load_one(file_path, display_filename=display_filename)
     chunks = chunk_documents([doc], chunk_size=chunk_size, overlap=overlap)
     if not chunks:
         raise ValueError("No chunks produced from document.")

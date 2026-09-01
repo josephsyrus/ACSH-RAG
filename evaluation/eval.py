@@ -101,7 +101,7 @@ class _GeminiChat(SimpleChatModel):
 
     @property
     def _llm_type(self) -> str:
-        return "gemini-direct"
+        return "gemini-sdk"
 
 
 class _GeminiEmbeddings(Embeddings):

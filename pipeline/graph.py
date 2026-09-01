@@ -5,9 +5,6 @@ LangGraph orchestration for the full ACSH-RAG pipeline.
 
 State flows through these nodes depending on the route:
 
-DIRECT route:
-  [start] → router → direct_answer → [end]
-
 SIMPLE route:
   [start] → router → hyde_generate → retrieve → rerank
           → confidence_gate
@@ -52,7 +49,7 @@ class PipelineState(TypedDict):
     emit:            Optional[object] # SSE emitter emit(kind, payload) for token streaming, or None
 
     # Router
-    route:           str          # "direct" | "simple" | "complex"
+    route:           str          # "simple" | "complex"
 
     # Query manipulation
     active_query:    str          # current working query (may be reformulated)
@@ -93,23 +90,13 @@ _citation  = CitationEnforcer()
 # ─────────────────────────────────────────────
 
 def node_router(state: PipelineState) -> dict:
-    """Classify query as direct / simple / complex."""
+    """Classify query as simple or complex."""
     query = state["original_query"]
     route = _router.classify(query)
     return {
         "route":        route,
         "active_query": query,
         "retry_count":  0,
-    }
-
-
-def node_direct_answer(state: PipelineState) -> dict:
-    """Answer from Gemini's general knowledge — no retrieval."""
-    answer = _citation.generate_direct_answer(state["original_query"])
-    return {
-        "final_answer":    answer,
-        "confidence":      "pass",
-        "cited_chunk_ids": [],
     }
 
 
@@ -271,14 +258,11 @@ def node_refuse(state: PipelineState) -> dict:
 
 def route_after_router(
     state: PipelineState,
-) -> Literal["direct_answer", "hyde_generate", "decompose"]:
+) -> Literal["hyde_generate", "decompose"]:
     route = state["route"]
-    if route == "direct":
-        return "direct_answer"
-    elif route == "complex":
+    if route == "complex":
         return "decompose"
-    else:
-        return "hyde_generate"   # default: "simple"
+    return "hyde_generate"   # default: "simple"
 
 
 def route_after_gate(
@@ -313,7 +297,6 @@ def build_pipeline() -> StateGraph:
 
     # Register all nodes
     builder.add_node("router",            node_router)
-    builder.add_node("direct_answer",     node_direct_answer)
     builder.add_node("decompose",         node_decompose)
     builder.add_node("hyde_generate",     node_hyde_generate)
     builder.add_node("retrieve",          node_retrieve)
@@ -328,11 +311,8 @@ def build_pipeline() -> StateGraph:
     # Entry point
     builder.set_entry_point("router")
 
-    # After router: branch to direct_answer, decompose, or hyde_generate
+    # After router: branch to decompose or hyde_generate.
     builder.add_conditional_edges("router", route_after_router)
-
-    # Direct path — ends immediately
-    builder.add_edge("direct_answer", END)
 
     # Complex path: decompose → retrieve_multi → rerank
     builder.add_edge("decompose",      "retrieve_multi")
