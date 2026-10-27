@@ -24,3 +24,6 @@ sessions/
 # Local OCR results — regenerable, keyed by document content hash
 ocr_cache/
 
+
+# User database (SQLite by default)
+data/

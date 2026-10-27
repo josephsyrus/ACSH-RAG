@@ -17,10 +17,11 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from fastapi import FastAPI, HTTPException, UploadFile, File
-from fastapi.responses import StreamingResponse
+from fastapi import Depends, FastAPI, HTTPException, UploadFile, File
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 from typing import Optional
 import uuid
 import shutil
@@ -29,7 +30,13 @@ import queue
 import threading
 import logging
 
+from accounts import require_user, setup as setup_accounts
+from accounts.db import (
+    SessionLocal, User, consume_message, get_db, refund_message, usage_snapshot,
+)
+
 app = FastAPI(title="ACSH-RAG", docs_url="/api/docs", openapi_url="/api/openapi.json")
+setup_accounts(app)
 logger = logging.getLogger(__name__)
 
 SESSIONS_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sessions")
@@ -67,15 +74,49 @@ class AskRequest(BaseModel):
     session_id: Optional[str] = None   # when set, answer only from that upload
 
 
-def _resolve_session_dirs(session_id: str) -> dict:
+def _owner_of(session_root: str) -> Optional[int]:
+    try:
+        with open(os.path.join(session_root, "owner"), "r") as f:
+            return int(f.read().strip())
+    except (OSError, ValueError):
+        return None
+
+
+def _resolve_session_dirs(session_id: str, user: User) -> dict:
     """Validate a session_id (guarding against path traversal) and return its
-    isolated index directories."""
+    isolated index directories. A session the caller does not own looks exactly
+    like one that does not exist."""
     from src.upload import session_dirs
     safe = os.path.basename((session_id or "").strip())   # strip any path parts
     sroot = os.path.join(SESSIONS_ROOT, safe)
-    if not safe or not os.path.exists(os.path.join(sroot, "graph_db", "graph.json")):
+    if (
+        not safe
+        or not os.path.exists(os.path.join(sroot, "graph_db", "graph.json"))
+        or _owner_of(sroot) != user.id
+    ):
         raise HTTPException(status_code=404, detail="Session not found. Upload a document first.")
     return session_dirs(sroot)
+
+
+def _limit_reached(usage: dict) -> JSONResponse:
+    return JSONResponse(status_code=429, content={
+        "detail": "You have used all of today's messages.",
+        "code": "limit_reached",
+        "resets_at": usage["resets_at"],
+        "usage": usage,
+    })
+
+
+def _refund(user_id: int) -> None:
+    with SessionLocal() as s:
+        user = s.get(User, user_id)
+        if user:
+            refund_message(s, user)
+
+
+def _usage(user_id: int) -> dict:
+    with SessionLocal() as s:
+        return usage_snapshot(s, user_id)
 
 
 @app.get("/api/health")
@@ -84,7 +125,7 @@ def health():
 
 
 @app.post("/api/upload")
-async def upload(file: UploadFile = File(...)):
+async def upload(file: UploadFile = File(...), user: User = Depends(require_user)):
     ext = os.path.splitext(file.filename or "")[1].lower()
     if ext not in SUPPORTED_EXT:
         raise HTTPException(status_code=400, detail=f"Unsupported file type '{ext}'. Use PDF, Markdown, or text.")
@@ -97,6 +138,8 @@ async def upload(file: UploadFile = File(...)):
         _cleanup_sessions(SESSIONS_ROOT)   # reap stale sessions before adding a new one
         updir = os.path.join(session_root, "upload")
         os.makedirs(updir, exist_ok=True)
+        with open(os.path.join(session_root, "owner"), "w") as f:
+            f.write(str(user.id))
         # Keep the physical path short for Windows' path-length limit while
         # preserving the user's original filename in response/index metadata.
         dest = os.path.join(updir, f"document{ext}")
@@ -120,12 +163,17 @@ async def upload(file: UploadFile = File(...)):
 
 
 @app.post("/api/ask")
-def ask(req: AskRequest):
+def ask(req: AskRequest, user: User = Depends(require_user), db: Session = Depends(get_db)):
     question = req.question.strip()
     if not question:
         raise HTTPException(status_code=400, detail="Question is empty.")
 
-    index_dirs = _resolve_session_dirs(req.session_id) if req.session_id else None
+    index_dirs = _resolve_session_dirs(req.session_id, user) if req.session_id else None
+
+    # Take the message before doing any work, so concurrent requests cannot
+    # overspend the allowance. It is handed back below if the request fails.
+    if not consume_message(db, user):
+        return _limit_reached(usage_snapshot(db, user.id))
 
     try:
         # Imported lazily so the server starts fast; first question pays the
@@ -137,32 +185,36 @@ def ask(req: AskRequest):
             "citations":  result["citations"],
             "route":      result["route"],
             "confidence": result["confidence"],
+            "usage":      usage_snapshot(db, user.id),
         }
     except Exception as e:
+        refund_message(db, user)
         msg = str(e)
         if any(tok in msg for tok in ("429", "RESOURCE_EXHAUSTED", "Max retries")):
-            # Quota exhaustion is an expected operational state on free tier —
+            # Provider quota exhaustion is an expected operational state —
             # surface it as a readable answer instead of a 500.
             return {
-                "answer": (
-                    "The Gemini API quota is currently exhausted. "
-                    "Please try again later (free-tier quotas reset daily at midnight Pacific)."
-                ),
+                "answer": "The language-model service is temporarily unavailable. Please try again shortly.",
                 "citations":  [],
                 "route":      "error",
                 "confidence": "quota_exhausted",
+                "usage":      usage_snapshot(db, user.id),
             }
         raise HTTPException(status_code=500, detail=msg)
 
 
 @app.post("/api/ask_stream")
-def ask_stream(req: AskRequest):
+def ask_stream(req: AskRequest, user: User = Depends(require_user), db: Session = Depends(get_db)):
     """Streaming /api/ask — emits Server-Sent Events: one {type:'stage'} per
     pipeline node as it runs, then a final {type:'done'} with the answer."""
     question = req.question.strip()
     if not question:
         raise HTTPException(status_code=400, detail="Question is empty.")
-    index_dirs = _resolve_session_dirs(req.session_id) if req.session_id else None
+    index_dirs = _resolve_session_dirs(req.session_id, user) if req.session_id else None
+
+    if not consume_message(db, user):
+        return _limit_reached(usage_snapshot(db, user.id))
+    user_id = user.id
 
     # The pipeline runs in a worker thread and pushes events onto this queue:
     # ('stage', label) between nodes, ('token', text) from inside the answer
@@ -205,14 +257,16 @@ def ask_stream(req: AskRequest):
                 "route":      final.get("route", "unknown"),
                 "confidence": final.get("confidence", "unknown"),
                 "citations":  shape_citations(final),
+                "usage":      _usage(user_id),
             }))
         except Exception as e:
+            _refund(user_id)
             msg = str(e)
             if any(tok in msg for tok in ("429", "RESOURCE_EXHAUSTED", "Max retries")):
                 q.put(("done", {
-                    "answer": ("The Gemini API quota is currently exhausted. "
-                               "Please try again later (free-tier quotas reset daily at midnight Pacific)."),
+                    "answer": "The language-model service is temporarily unavailable. Please try again shortly.",
                     "route": "error", "confidence": "quota_exhausted", "citations": [],
+                    "usage": _usage(user_id),
                 }))
             else:
                 q.put(("error", msg))
@@ -251,4 +305,5 @@ app.mount(
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    # Hosts and containers set HOST/PORT; the defaults suit local development.
+    uvicorn.run(app, host=os.getenv("HOST", "127.0.0.1"), port=int(os.getenv("PORT", "8000")))

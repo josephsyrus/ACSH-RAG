@@ -67,30 +67,70 @@
   .srccard { display: inline-block; margin: 2px 6px 2px 0; }
   .srccard sup { color: var(--accent); font-weight: 700; margin-right: 2px; }
   .srccard:target { background: rgba(108,92,231,0.28); border-radius: 4px; padding: 1px 5px; }
+
+  /* accounts */
+  [hidden] { display: none !important; }
+  #acct { margin-left: auto; align-self: center; display: flex; align-items: center; gap: 10px; }
+  #avatar { width: 26px; height: 26px; border-radius: 50%; }
+  #uname { color: var(--muted); font-size: 13px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chip.limit { border-color: var(--amber); color: #e2c56b; }
+  button.ghost { background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 6px 12px; font-size: 13px; }
+  button.ghost:hover { color: var(--text); border-color: var(--muted); }
+  #app { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  #gate { flex: 1; display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .gate-card { max-width: 400px; width: 100%; background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 32px; text-align: center; }
+  .gate-card h2 { font-size: 20px; margin-bottom: 8px; }
+  .gate-card p { color: var(--muted); font-size: 14px; line-height: 1.5; margin-bottom: 22px; }
+  .gbtn { display: inline-flex; align-items: center; gap: 10px; background: #fff; color: #1f1f1f; border: 1px solid #dadce0; border-radius: 8px; padding: 10px 18px; font-size: 15px; font-weight: 500; text-decoration: none; }
+  .gbtn:hover { background: #f6f7f8; }
+  .gbtn svg { width: 18px; height: 18px; }
+  .gbtn.off { opacity: .5; pointer-events: none; }
+  #gateNote { margin-top: 16px; min-height: 18px; font-size: 13px; color: #e2c56b; }
 </style>
 </head>
 <body>
 <header>
   <h1>ACSH-RAG</h1>
   <span>hybrid retrieval &middot; adaptive routing &middot; cited answers</span>
+  <div id="acct" hidden>
+    <span id="usage" class="chip"></span>
+    <span id="plan" class="chip"></span>
+    <img id="avatar" alt="" referrerpolicy="no-referrer" hidden>
+    <span id="uname"></span>
+    <button id="signout" class="ghost" type="button">Sign out</button>
+  </div>
 </header>
 
-<div id="srcbar">
-  <label id="uploadBtn">
-    &#128196; Upload a document
-    <input id="fileInput" type="file" accept=".pdf,.md,.markdown,.txt" hidden>
-  </label>
-  <span id="srcStatus">Using the default corpus. Upload a PDF/text file to ask about your own document.</span>
-</div>
+<main id="gate" hidden>
+  <div class="gate-card">
+    <h2>Sign in to start asking</h2>
+    <p id="gateCopy">Ask questions about your documents and get answers backed by cited sources.</p>
+    <a id="gbtn" class="gbtn" href="/auth/login">
+      <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      Sign in with Google
+    </a>
+    <div id="gateNote" role="alert"></div>
+  </div>
+</main>
 
-<div id="chat">
-  <div class="msg bot">Ask me anything about the ingested documents. Every answer is grounded in the sources and cited &mdash; if the documents don't cover it, I'll say so.</div>
-</div>
+<div id="app" hidden>
+  <div id="srcbar">
+    <label id="uploadBtn">
+      &#128196; Upload a document
+      <input id="fileInput" type="file" accept=".pdf,.md,.markdown,.txt" hidden>
+    </label>
+    <span id="srcStatus">Using the default corpus. Upload a PDF/text file to ask about your own document.</span>
+  </div>
 
-<form id="form">
-  <input id="q" type="text" placeholder="Ask a question..." autocomplete="off" autofocus>
-  <button id="send" type="submit">Ask</button>
-</form>
+  <div id="chat">
+    <div class="msg bot">Ask me anything about the ingested documents. Every answer is grounded in the sources and cited &mdash; if the documents don't cover it, I'll say so.</div>
+  </div>
+
+  <form id="form">
+    <input id="q" type="text" placeholder="Ask a question..." autocomplete="off" autofocus>
+    <button id="send" type="submit">Ask</button>
+  </form>
+</div>
 
 <script>
 const chat = document.getElementById("chat");
@@ -100,6 +140,80 @@ const send = document.getElementById("send");
 const fileInput = document.getElementById("fileInput");
 const srcStatus = document.getElementById("srcStatus");
 let sessionId = null;
+
+// ── accounts ────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+let me = null, usage = null, busy = false;
+const DEFAULT_PLACEHOLDER = input.placeholder;
+const AUTH_ERRORS = {
+  not_configured: "Google sign-in isn't set up on this server yet.",
+  sign_in_failed: "Sign-in was cancelled or didn't complete. Please try again.",
+  unverified_email: "Your Google account's email isn't verified, so we couldn't sign you in.",
+  disabled: "This account has been disabled.",
+};
+
+function whenReset(iso) {
+  const d = new Date(iso);
+  const time = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  return d.toDateString() === new Date().toDateString() ? `today at ${time}` : `tomorrow at ${time}`;
+}
+
+function applyLimitState() {
+  const out = !!usage && usage.remaining <= 0;
+  send.disabled = busy || out;
+  input.disabled = out;
+  input.placeholder = out ? `Daily limit reached — resets ${whenReset(usage.resets_at)}` : DEFAULT_PLACEHOLDER;
+}
+
+function setUsage(u) {
+  usage = u;
+  const chip = $("usage");
+  chip.textContent = `${u.remaining} of ${u.limit} left today`;
+  chip.className = "chip" + (u.remaining === 0 ? " limit" : "");
+  chip.title = `Resets ${whenReset(u.resets_at)}`;
+  $("plan").textContent = u.plan === "pro" ? "Pro" : "Free";
+  applyLimitState();
+}
+
+function renderAuth(note) {
+  const signedIn = !!me.authenticated;
+  $("gate").hidden = signedIn;
+  $("app").hidden = !signedIn;
+  $("acct").hidden = !signedIn;
+  if (signedIn) {
+    $("uname").textContent = me.name || me.email;
+    if (me.picture) { $("avatar").src = me.picture; $("avatar").hidden = false; }
+    setUsage(me.usage);
+    input.focus();
+    return;
+  }
+  const n = me.demo_limit;
+  $("gateCopy").textContent = "Ask questions about your documents and get answers backed by cited sources." +
+    (n ? ` Free accounts get ${n} question${n === 1 ? "" : "s"} a day.` : "");
+  $("gbtn").classList.toggle("off", !me.login_configured);
+  $("gateNote").textContent = note || (me.disabled ? AUTH_ERRORS.disabled : "");
+}
+
+function signedOut(note) {
+  me = { authenticated: false, login_configured: true, demo_limit: me && me.demo_limit };
+  renderAuth(note);
+}
+
+async function loadMe() {
+  const err = new URLSearchParams(location.search).get("auth_error");
+  if (err) history.replaceState(null, "", location.pathname);
+  try {
+    me = await (await fetch("/api/me")).json();
+    renderAuth(err ? (AUTH_ERRORS[err] || AUTH_ERRORS.sign_in_failed) : "");
+  } catch (_) {
+    me = { authenticated: false, login_configured: true };
+    renderAuth("Couldn't reach the server. Please refresh the page.");
+  }
+}
+
+$("signout").addEventListener("click", async () => {
+  try { await fetch("/auth/logout", { method: "POST" }); } finally { location.reload(); }
+});
 
 function add(cls, html) {
   const d = document.createElement("div");
@@ -143,9 +257,10 @@ function renderMarkdown(md) {
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
   const q = input.value.trim();
-  if (!q) return;
+  if (!q || !me || !me.authenticated || (usage && usage.remaining <= 0)) return;
   add("user", esc(q));
   input.value = "";
+  busy = true;
   send.disabled = true;
   const wait = add("bot", '<span class="loader"><span></span><span></span><span></span></span><span class="loadtxt">thinking… 0s</span>');
   const t0 = Date.now();
@@ -169,6 +284,7 @@ form.addEventListener("submit", async (e) => {
       const i = numByChunk[String(parseInt(n, 10))];
       return i ? `<sup class="cite"><a href="#src-${i}">${i}</a></sup>` : "";
     });
+    if (evt.usage) setUsage(evt.usage);
     html += `<div class="meta">
       <span class="chip">route: ${esc(evt.route)}</span>
       <span class="chip ${esc(evt.confidence)}">confidence: ${esc(evt.confidence)}</span>
@@ -191,6 +307,19 @@ form.addEventListener("submit", async (e) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ question: q, session_id: sessionId }),
     });
+    if (res.status === 401) {
+      wait.remove();
+      signedOut("Your session has ended. Please sign in again.");
+      return;
+    }
+    if (res.status === 429) {
+      const body = await res.json().catch(() => ({}));
+      if (body.usage) setUsage(body.usage);
+      wait.className = "msg bot";
+      wait.innerHTML = `<span class="chip limit">daily limit reached</span> You've used all of today's messages. ` +
+        `Your allowance resets ${whenReset(body.resets_at)}. Pro plans with a higher limit are coming soon.`;
+      return;
+    }
     if (!res.ok || !res.body) {
       let detail = res.statusText;
       try { detail = (await res.json()).detail || detail; } catch (_) {}
@@ -240,8 +369,9 @@ form.addEventListener("submit", async (e) => {
     wait.innerHTML = `<span class="chip error">error</span> ${esc(err.message)}`;
   } finally {
     clearInterval(timer);
-    send.disabled = false;
-    input.focus();
+    busy = false;
+    applyLimitState();
+    if (!input.disabled) input.focus();
     chat.scrollTop = chat.scrollHeight;
   }
 });
@@ -262,6 +392,7 @@ fileInput.addEventListener("change", async () => {
       // A proxy or unexpected server failure may return plain text/HTML.
     }
     if (!res.ok) {
+      if (res.status === 401) signedOut("Your session has ended. Please sign in again.");
       throw new Error(data?.detail || body || `Upload failed (${res.status}).`);
     }
     if (!data) throw new Error("Upload succeeded but returned an invalid response.");
@@ -275,6 +406,8 @@ fileInput.addEventListener("change", async () => {
     fileInput.value = "";
   }
 });
+
+loadMe();
 </script>
 </body>
 </html>

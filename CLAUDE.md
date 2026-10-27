@@ -117,7 +117,16 @@ python evaluation/eval.py
 
 ## Configuration
 - `GEMINI_API_KEY` must be set in `.env` (required for all pipeline LLM steps).
-- Generated / git-ignored: `chroma_db/`, `bm25_index/`, `graph_db/`, `venv/`, `Documents/`, `graphify-out/cache/`.
+- Generated / git-ignored: `chroma_db/`, `bm25_index/`, `graph_db/`, `venv/`, `Documents/`, `graphify-out/cache/`, `data/`.
+
+## Accounts (`accounts/`)
+Google sign-in, cookie sessions and a per-account daily message limit. The web app refuses `/api/ask`, `/api/ask_stream` and `/api/upload` without a signed-in user; uploaded sessions are tied to their owner (`sessions/<id>/owner`).
+- All settings are environment variables — see `.env.example` (Google OAuth client, `APP_BASE_URL`, `SESSION_SECRET`, `DATABASE_URL`, daily limits, `HOST`/`PORT`). `SESSION_SECRET` and `DATABASE_URL` are mandatory when `APP_BASE_URL` is https.
+- Database: PostgreSQL (Neon) via `DATABASE_URL`, using the psycopg 3 driver and the pooled connection string. Tables are created on startup. Local SQLite is only a development fallback.
+- Limits: `demo` plan `DEMO_DAILY_LIMIT` (3), `pro` plan `PRO_DAILY_LIMIT` (200), reset at 00:00 UTC. The message is taken atomically before the pipeline runs and refunded if the request fails.
+- Grant Pro / block an account until payments exist: `python -m accounts.admin set-plan EMAIL pro` · `disable EMAIL` · `list`.
+- Tests (no API key needed): `python -m pytest tests/test_accounts.py` — run this file only; `tests/test_gemini_smoke.py` calls the real API. Uses a throwaway SQLite file unless `TEST_DATABASE_URL` points at a separate PostgreSQL database.
+- Run a single uvicorn worker: retrievers are cached in process memory.
 
 ## Codebase knowledge graph (graphify)
 `graphify-out/graph.json` is a queryable graph of this codebase (functions, classes, call/import edges). Use it instead of re-reading files:

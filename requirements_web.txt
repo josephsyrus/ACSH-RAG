@@ -6,3 +6,10 @@ python-multipart>=0.0.9   # required for file uploads (/api/upload)
 pymupdf>=1.24
 rapidocr-onnxruntime>=1.3
 opencv-python-headless>=4.10
+
+# Accounts: Google sign-in, cookie sessions, user database
+authlib>=1.3
+httpx>=0.27           # used by Authlib's Starlette client
+itsdangerous>=2.1     # signs the session cookie
+sqlalchemy>=2.0
+psycopg[binary]>=3.1   # PostgreSQL driver (Neon, or any PostgreSQL)
