@@ -110,9 +110,11 @@ python pipeline_api.py                          # runs built-in self-test querie
 pip install -r requirements_web.txt
 python web_app.py                               # → http://localhost:8000
 
-# Evaluation (RAGAS — separate deps)
+# Evaluation (RAGAS — separate deps; uses its own corpus + indexes under evaluation/)
 pip install -r requirements_c.txt
-python evaluation/eval.py
+python evaluation/prepare_corpus.py --text A.pdf=gnn_leak_detection.pdf --scanned B.pdf=fuzzy_gnn_scanned.pdf
+python evaluation/eval.py --retrieval-only      # free: no API calls (this is what CI runs on every change)
+python evaluation/eval.py --pause 15            # full: pipeline + RAGAS judge (Gemini); writes results/dashboard.html
 ```
 
 ## Configuration

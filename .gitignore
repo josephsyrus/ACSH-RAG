@@ -27,3 +27,10 @@ ocr_cache/
 
 # User database (SQLite by default)
 data/
+
+# Evaluation corpus and its indexes (rebuilt by evaluation/prepare_corpus.py)
+evaluation/corpus/
+evaluation/index/
+
+# Cloud Run secrets (gcloud --env-vars-file)
+env.yaml

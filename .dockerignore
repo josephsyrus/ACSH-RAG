@@ -1,0 +1,16 @@
+.env
+.env.*
+.git
+venv/
+.venv/
+__pycache__/
+*.pyc
+chroma_db/
+bm25_index/
+graph_db/
+sessions/
+ocr_cache/
+data/
+evaluation/
+tests/
+graphify-out/

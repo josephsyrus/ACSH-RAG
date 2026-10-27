@@ -160,6 +160,7 @@ def fake_pipeline(monkeypatch):
     graph.get_pipeline = lambda: Pipeline()
     api = types.ModuleType("pipeline_api")
     api.shape_citations = lambda final: []
+    api.shape_details = lambda final: {}
     api.run_pipeline = lambda *a, **k: (_ for _ in ()).throw(RuntimeError("boom")) if state["fail"] else {
         "answer": "An answer.", "citations": [], "route": "simple", "confidence": "pass"}
     pkg = types.ModuleType("pipeline")

@@ -185,6 +185,7 @@ def ask(req: AskRequest, user: User = Depends(require_user), db: Session = Depen
             "citations":  result["citations"],
             "route":      result["route"],
             "confidence": result["confidence"],
+            "details":    result.get("details"),
             "usage":      usage_snapshot(db, user.id),
         }
     except Exception as e:
@@ -225,7 +226,7 @@ def ask_stream(req: AskRequest, user: User = Depends(require_user), db: Session 
     def worker():
         try:
             from pipeline.graph import get_pipeline
-            from pipeline_api import shape_citations
+            from pipeline_api import shape_citations, shape_details
             state = {
                 "original_query":  question,
                 "index_dirs":      index_dirs,
@@ -257,6 +258,7 @@ def ask_stream(req: AskRequest, user: User = Depends(require_user), db: Session 
                 "route":      final.get("route", "unknown"),
                 "confidence": final.get("confidence", "unknown"),
                 "citations":  shape_citations(final),
+                "details":    shape_details(final),
                 "usage":      _usage(user_id),
             }))
         except Exception as e:

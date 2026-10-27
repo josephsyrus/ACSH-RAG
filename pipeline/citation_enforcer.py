@@ -54,6 +54,51 @@ def _load_prompts() -> dict:
 
 
 # ─────────────────────────────────────────────
+# Self-RAG acceptance threshold
+# ─────────────────────────────────────────────
+
+# Minimum share of the answer's sentences the critic must find supported.
+# 100% = accepted as is; at or above this = unsupported sentences removed;
+# below this = the whole answer is withheld.
+SUPPORT_THRESHOLD = 0.70
+
+
+def _sentences(text: str) -> List[str]:
+    """Split an answer into checkable sentences (bullets and numbered items
+    count as sentences; fragments under three words, such as headings, don't)."""
+    found = []
+    for line in text.splitlines():
+        line = re.sub(r"^\s*(?:[-*•]|\d+[.)])\s+", "", line).strip()
+        for part in re.split(r"(?<=[.!?])\s+", line):
+            if len(re.findall(r"\w+", part)) >= 3:
+                found.append(part)
+    return found
+
+
+def apply_support_threshold(answer: str, model_verdict: str, unsupported: List[str]) -> Dict:
+    """Turn the critic's list of unsupported sentences into a support ratio and a
+    verdict. The critic's own 'fail' is kept: it means the answer as a whole is
+    not grounded, even when no single sentence is listed."""
+    total = len(_sentences(answer))
+    bad = min(len(unsupported), total)
+    ratio = 1.0 if total == 0 else round((total - bad) / total, 4)
+    if model_verdict == "fail" or ratio < SUPPORT_THRESHOLD:
+        verdict = "fail"
+    elif bad:
+        verdict = "partial"
+    else:
+        verdict = "pass"
+    return {
+        "verdict": verdict,
+        "checked": True,
+        "support_ratio": ratio,
+        "sentences_checked": total,
+        "sentences_unsupported": bad,
+        "support_threshold": SUPPORT_THRESHOLD,
+    }
+
+
+# ─────────────────────────────────────────────
 # Build context string
 # ─────────────────────────────────────────────
 
@@ -219,18 +264,23 @@ class CitationEnforcer:
                 "explanation":
                     "Critic parse failed; answer accepted as-is.",
                 "final_answer": answer,
+                "checked": False,
+                "support_threshold": SUPPORT_THRESHOLD,
             }
-
-        verdict = result.get("verdict", "pass")
 
         unsupported = result.get(
             "unsupported_sentences",
             []
         )
 
+        # The verdict is decided by the support ratio, not by the model's label.
+        result.update(apply_support_threshold(answer, result.get("verdict", "pass"), unsupported))
+        verdict = result["verdict"]
+
         print(
             f"[SelfRAG] Verdict: {verdict} | "
-            f"Unsupported: {len(unsupported)} sentences"
+            f"Unsupported: {result['sentences_unsupported']}/{result['sentences_checked']} "
+            f"sentences | support {result['support_ratio']:.0%} (threshold {SUPPORT_THRESHOLD:.0%})"
         )
 
         # Remove unsupported sentences if partial

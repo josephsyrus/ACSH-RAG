@@ -86,6 +86,7 @@ def me(user: Optional[User] = Depends(current_user), db: Session = Depends(get_d
         "authenticated": False,
         "login_configured": config.GOOGLE_CONFIGURED,
         "demo_limit": config.DEMO_DAILY_LIMIT,
+        "pro_limit": config.PRO_DAILY_LIMIT,
     }
     if user is None:
         return signed_out
@@ -97,6 +98,8 @@ def me(user: Optional[User] = Depends(current_user), db: Session = Depends(get_d
         "email": user.email,
         "picture": user.picture,
         "usage": usage_snapshot(db, user.id),
+        "demo_limit": config.DEMO_DAILY_LIMIT,
+        "pro_limit": config.PRO_DAILY_LIMIT,
     }
 
 

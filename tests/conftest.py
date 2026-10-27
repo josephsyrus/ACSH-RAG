@@ -28,5 +28,6 @@ os.environ["SESSION_SECRET"] = "test-secret"
 os.environ["APP_BASE_URL"] = "http://localhost:8000"
 os.environ["GOOGLE_CLIENT_ID"] = "test-client-id"
 os.environ["GOOGLE_CLIENT_SECRET"] = "test-client-secret"
+os.environ.setdefault("GEMINI_API_KEY", "test-key-never-used")   # pipeline modules build a client on import
 os.environ["DEMO_DAILY_LIMIT"] = "3"
 os.environ["PRO_DAILY_LIMIT"] = "5"

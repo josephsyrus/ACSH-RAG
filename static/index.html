@@ -3,148 +3,611 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ACSH-RAG</title>
+<title>ACSH-RAG — Cited answers from your documents</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #16161a; --panel: #1f1f27; --border: #2e2e3a;
-    --text: #e8e8ef; --muted: #9a9aad; --accent: #6c5ce7;
-    --green: #1f7a5c; --red: #a03c3c; --amber: #8a6d1f;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    background: var(--bg); color: var(--text);
-    font-family: "Segoe UI", system-ui, sans-serif;
-    display: flex; flex-direction: column; height: 100vh;
-  }
-  header {
-    padding: 14px 22px; border-bottom: 1px solid var(--border);
-    display: flex; align-items: baseline; gap: 12px;
-  }
-  header h1 { font-size: 18px; }
-  header span { color: var(--muted); font-size: 13px; }
-  #chat { flex: 1; overflow-y: auto; padding: 22px; display: flex; flex-direction: column; gap: 14px; }
-  .msg { max-width: 76%; padding: 12px 16px; border-radius: 12px; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word; }
-  .user { align-self: flex-end; background: var(--accent); border-bottom-right-radius: 4px; }
-  .bot  { align-self: flex-start; background: var(--panel); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
-  .meta { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-  .chip { font-size: 11px; padding: 3px 9px; border-radius: 99px; border: 1px solid var(--border); color: var(--muted); }
-  .chip.pass { border-color: var(--green); color: #6fcf9f; }
-  .chip.low_confidence, .chip.quota_exhausted { border-color: var(--amber); color: #e2c56b; }
-  .chip.refused, .chip.error { border-color: var(--red); color: #e07b7b; }
-  .cites { margin-top: 8px; font-size: 12px; color: var(--muted); }
-  .cites code { background: var(--bg); padding: 2px 6px; border-radius: 4px; }
-  form { display: flex; gap: 10px; padding: 16px 22px; border-top: 1px solid var(--border); }
-  input {
-    flex: 1; padding: 12px 16px; border-radius: 10px; border: 1px solid var(--border);
-    background: var(--panel); color: var(--text); font-size: 15px; outline: none;
-  }
-  input:focus { border-color: var(--accent); }
-  button {
-    padding: 12px 22px; border-radius: 10px; border: none; background: var(--accent);
-    color: white; font-size: 15px; cursor: pointer;
-  }
-  button:disabled { opacity: 0.5; cursor: wait; }
-  .typing { color: var(--muted); font-style: italic; }
-  #srcbar { display: flex; align-items: center; gap: 12px; padding: 10px 22px; border-bottom: 1px solid var(--border); background: var(--panel); font-size: 13px; }
-  #uploadBtn { cursor: pointer; padding: 6px 12px; border: 1px solid var(--accent); border-radius: 8px; color: #cfc9ff; white-space: nowrap; }
-  #uploadBtn:hover { background: rgba(108,92,231,0.15); }
-  #srcStatus { color: var(--muted); }
-  .msg p { margin: 0 0 8px; white-space: normal; }
-  .msg p:last-child { margin-bottom: 0; }
-  .msg ul { margin: 6px 0 6px 0; padding-left: 22px; white-space: normal; }
-  .msg li { margin: 3px 0; white-space: normal; }
-  .msg strong { color: #fff; }
-  .msg code { background: var(--bg); padding: 1px 5px; border-radius: 4px; font-size: 0.92em; }
-  .loader { display: inline-flex; gap: 4px; margin-right: 9px; vertical-align: middle; }
-  .loader span { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: bounce 1.2s infinite ease-in-out; }
-  .loader span:nth-child(2) { animation-delay: .2s; }
-  .loader span:nth-child(3) { animation-delay: .4s; }
-  @keyframes bounce { 0%, 80%, 100% { transform: scale(.5); opacity: .5; } 40% { transform: scale(1); opacity: 1; } }
-  .loadtxt { color: var(--muted); font-style: italic; font-size: 13px; vertical-align: middle; }
-  .stream { white-space: pre-wrap; }
-  sup.cite a { color: var(--accent); text-decoration: none; font-weight: 700; padding: 0 1px; cursor: pointer; }
-  sup.cite a:hover { text-decoration: underline; }
-  .srccard { display: inline-block; margin: 2px 6px 2px 0; }
-  .srccard sup { color: var(--accent); font-weight: 700; margin-right: 2px; }
-  .srccard:target { background: rgba(108,92,231,0.28); border-radius: 4px; padding: 1px 5px; }
+    /* palette */
+    --c-950: #031716;
+    --c-900: #032F30;
+    --c-600: #0A7075;
+    --c-500: #0C969C;
+    --c-300: #6BA3BE;
+    --c-slate: #274D60;
 
-  /* accounts */
+    --bg: var(--c-950);
+    --surface: var(--c-900);
+    --surface-2: #063a3c;
+    --raised: #0a4446;
+    --border: rgba(107, 163, 190, 0.16);
+    --border-strong: rgba(107, 163, 190, 0.32);
+    --text: #E6F2F2;
+    --text-2: #A8C7CE;
+    --text-3: #7298A3;
+    --accent: var(--c-500);
+    --accent-soft: rgba(12, 150, 156, 0.14);
+    --ok: #5CC9A7;
+    --warn: #E3C46E;
+    --danger: #E8907F;
+    --radius: 14px;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .25), 0 12px 32px rgba(0, 0, 0, .28);
+    --font: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
   [hidden] { display: none !important; }
-  #acct { margin-left: auto; align-self: center; display: flex; align-items: center; gap: 10px; }
-  #avatar { width: 26px; height: 26px; border-radius: 50%; }
-  #uname { color: var(--muted); font-size: 13px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .chip.limit { border-color: var(--amber); color: #e2c56b; }
-  button.ghost { background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 6px 12px; font-size: 13px; }
-  button.ghost:hover { color: var(--text); border-color: var(--muted); }
-  #app { display: flex; flex-direction: column; flex: 1; min-height: 0; }
-  #gate { flex: 1; display: flex; align-items: center; justify-content: center; padding: 24px; }
-  .gate-card { max-width: 400px; width: 100%; background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 32px; text-align: center; }
-  .gate-card h2 { font-size: 20px; margin-bottom: 8px; }
-  .gate-card p { color: var(--muted); font-size: 14px; line-height: 1.5; margin-bottom: 22px; }
-  .gbtn { display: inline-flex; align-items: center; gap: 10px; background: #fff; color: #1f1f1f; border: 1px solid #dadce0; border-radius: 8px; padding: 10px 18px; font-size: 15px; font-weight: 500; text-decoration: none; }
-  .gbtn:hover { background: #f6f7f8; }
-  .gbtn svg { width: 18px; height: 18px; }
+  html, body { height: 100%; }
+  body {
+    font-family: var(--font); font-size: 15px; line-height: 1.6;
+    color: var(--text); background: var(--bg);
+    -webkit-font-smoothing: antialiased;
+  }
+  body::before {
+    content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background:
+      radial-gradient(1100px 520px at 50% -12%, rgba(12, 150, 156, .16), transparent 62%),
+      radial-gradient(800px 480px at 105% 110%, rgba(39, 77, 96, .45), transparent 60%);
+  }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+  a { color: var(--c-300); }
+  :focus-visible { outline: 2px solid var(--c-300); outline-offset: 2px; border-radius: 8px; }
+  .ic { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+  .ic.sm { width: 15px; height: 15px; }
+  .ic.lg { width: 22px; height: 22px; }
+
+  /* ── buttons ─────────────────────────────────────────────────────────── */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    height: 38px; padding: 0 16px; border-radius: 10px;
+    font-weight: 600; font-size: 14px; white-space: nowrap;
+    transition: background .15s, border-color .15s, color .15s, transform .15s;
+  }
+  .btn-primary { background: var(--c-600); color: #fff; }
+  .btn-primary:hover { background: var(--c-500); }
+  .btn-pro { background: linear-gradient(135deg, var(--c-500), var(--c-600)); color: #fff; box-shadow: 0 6px 18px rgba(12, 150, 156, .28); }
+  .btn-pro:hover { transform: translateY(-1px); }
+  .btn-ghost { border: 1px solid var(--border-strong); color: var(--text-2); }
+  .btn-ghost:hover { border-color: var(--c-300); color: var(--text); }
+  .btn-block { width: 100%; height: 44px; }
+  .btn:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* ── brand ───────────────────────────────────────────────────────────── */
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 16px; letter-spacing: -.01em; }
+  .mark {
+    width: 32px; height: 32px; border-radius: 9px; flex: none;
+    background: linear-gradient(135deg, var(--c-500), var(--c-600));
+    display: grid; place-items: center; color: #fff;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18);
+  }
+  .mark .ic { width: 17px; height: 17px; }
+  .mark.sm { width: 28px; height: 28px; border-radius: 8px; }
+  .mark.sm .ic { width: 15px; height: 15px; }
+
+  /* ── landing (signed out) ────────────────────────────────────────────── */
+  #landing { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; }
+  .l-top { padding: 22px 32px; }
+  .l-main {
+    flex: 1; width: 100%; max-width: 1160px; margin: 0 auto; padding: 24px 32px 56px;
+    display: grid; grid-template-columns: 1.15fr .85fr; gap: 64px; align-items: center;
+  }
+  .eyebrow { display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px; border-radius: 99px; background: var(--accent-soft); color: var(--c-300); font-size: 12.5px; font-weight: 600; letter-spacing: .02em; }
+  .l-copy h1 { font-size: clamp(34px, 4.6vw, 52px); line-height: 1.08; letter-spacing: -.025em; font-weight: 700; margin: 18px 0 16px; text-wrap: balance; }
+  .l-copy h1 span { color: var(--c-500); }
+  .l-copy > p { color: var(--text-2); font-size: 17px; max-width: 34em; }
+  .features { list-style: none; display: grid; gap: 14px; margin-top: 30px; }
+  .features li { display: flex; gap: 14px; align-items: flex-start; }
+  .feat-ic { width: 36px; height: 36px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); display: grid; place-items: center; color: var(--c-500); flex: none; }
+  .features strong { display: block; font-size: 14.5px; }
+  .features span { color: var(--text-3); font-size: 13.5px; }
+
+  .preview { margin-top: 34px; max-width: 520px; border: 1px solid var(--border); border-radius: var(--radius); background: rgba(3, 47, 48, .6); padding: 18px; box-shadow: var(--shadow); }
+  .pv-q { margin-left: auto; width: fit-content; max-width: 85%; background: var(--c-600); padding: 9px 14px; border-radius: 14px 14px 4px 14px; font-size: 13.5px; }
+  .pv-a { display: flex; gap: 10px; margin-top: 14px; font-size: 13.5px; color: var(--text-2); }
+  .pv-a p { color: var(--text); }
+  .pv-src { margin-top: 10px; display: inline-flex; gap: 8px; align-items: center; font-size: 12px; color: var(--text-3); border: 1px solid var(--border); border-radius: 8px; padding: 4px 9px; }
+  sup.cite-mock { color: var(--c-500); font-weight: 700; font-size: 11px; }
+
+  .signin {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+    padding: 36px 32px; box-shadow: var(--shadow); text-align: center;
+  }
+  .signin h2 { font-size: 24px; letter-spacing: -.015em; }
+  .signin > p { color: var(--text-2); margin: 8px 0 26px; font-size: 14.5px; }
+  .gbtn {
+    display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; height: 48px;
+    background: #fff; color: #1f1f1f; border-radius: 12px; font-weight: 600; font-size: 15px;
+    text-decoration: none; transition: background .15s, transform .15s;
+  }
+  .gbtn:hover { background: #eef4f4; transform: translateY(-1px); }
+  .gbtn svg { width: 19px; height: 19px; }
   .gbtn.off { opacity: .5; pointer-events: none; }
-  #gateNote { margin-top: 16px; min-height: 18px; font-size: 13px; color: #e2c56b; }
+  .tiers { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 22px; text-align: left; }
+  .tier { border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
+  .tier .t-name { font-size: 12px; color: var(--text-3); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+  .tier .t-val { font-weight: 700; margin-top: 2px; }
+  .tier .t-sub { font-size: 12.5px; color: var(--text-3); }
+  .tier.pro { border-color: rgba(12, 150, 156, .45); background: var(--accent-soft); }
+  #gateNote { margin-top: 16px; min-height: 20px; font-size: 13.5px; color: var(--warn); }
+
+  /* ── app shell ───────────────────────────────────────────────────────── */
+  #app { position: relative; z-index: 1; height: 100vh; display: flex; flex-direction: column; }
+  .topbar {
+    display: flex; align-items: center; gap: 14px; height: 60px; padding: 0 20px;
+    border-bottom: 1px solid var(--border); background: rgba(3, 23, 22, .72); backdrop-filter: blur(10px);
+  }
+  .topbar .brand { margin-right: auto; }
+  .meter { display: flex; align-items: center; gap: 10px; padding: 6px 12px; border-radius: 10px; border: 1px solid var(--border); font-size: 13px; color: var(--text-2); }
+  .meter.clickable { cursor: pointer; }
+  .meter.clickable:hover { border-color: var(--border-strong); }
+  .meter-bar { width: 64px; height: 6px; border-radius: 99px; background: rgba(107, 163, 190, .18); overflow: hidden; }
+  .meter-fill { height: 100%; border-radius: 99px; background: var(--c-500); transition: width .4s ease; }
+  .meter.out { border-color: rgba(227, 196, 110, .45); color: var(--warn); }
+  .meter.out .meter-fill { background: var(--warn); }
+
+  .menu-wrap { position: relative; }
+  .avatar-btn { display: flex; align-items: center; gap: 6px; padding: 3px 6px 3px 3px; border-radius: 99px; border: 1px solid var(--border); }
+  .avatar-btn:hover { border-color: var(--border-strong); }
+  .avatar { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--c-slate); color: var(--text); font-weight: 700; font-size: 13px; overflow: hidden; }
+  .avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .menu {
+    position: absolute; right: 0; top: calc(100% + 8px); width: 260px; z-index: 30;
+    background: var(--surface); border: 1px solid var(--border-strong); border-radius: 14px;
+    box-shadow: var(--shadow); padding: 6px;
+  }
+  .menu-head { padding: 10px 12px 12px; border-bottom: 1px solid var(--border); margin-bottom: 6px; }
+  .mh-name { font-weight: 600; }
+  .mh-email { font-size: 12.5px; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .menu-plan { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; font-size: 13.5px; color: var(--text-2); }
+  .badge { font-size: 11.5px; font-weight: 700; padding: 3px 9px; border-radius: 99px; background: rgba(107, 163, 190, .16); color: var(--text-2); }
+  .badge.pro { background: var(--accent-soft); color: var(--c-500); }
+  .menu-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 12px; border-radius: 9px; font-size: 14px; color: var(--text-2); text-align: left; }
+  .menu-item:hover { background: var(--surface-2); color: var(--text); }
+  .menu-item.accent { color: var(--c-500); }
+
+  /* ── thread ──────────────────────────────────────────────────────────── */
+  #thread { flex: 1; overflow-y: auto; scroll-behavior: smooth; }
+  .thread-inner { max-width: 800px; margin: 0 auto; padding: 32px 24px 24px; }
+
+  .empty { text-align: center; padding: 8vh 0 24px; }
+  .empty .mark { width: 52px; height: 52px; border-radius: 15px; margin: 0 auto 20px; }
+  .empty .mark .ic { width: 26px; height: 26px; }
+  .empty h1 { font-size: 30px; letter-spacing: -.02em; line-height: 1.2; text-wrap: balance; }
+  .empty > p { color: var(--text-2); max-width: 520px; margin: 10px auto 0; }
+  .caps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 34px; text-align: left; }
+  .cap { border: 1px solid var(--border); background: rgba(3, 47, 48, .55); border-radius: 14px; padding: 16px; }
+  .cap .ic { color: var(--c-500); margin-bottom: 10px; }
+  .cap strong { display: block; font-size: 14px; }
+  .cap span { font-size: 13px; color: var(--text-3); }
+
+  .msg { display: flex; margin: 22px 0; animation: rise .25s ease both; }
+  .msg.user { justify-content: flex-end; flex-direction: column; align-items: flex-end; gap: 6px; }
+  .bubble { max-width: 78%; background: var(--c-600); color: #fff; padding: 11px 16px; border-radius: 18px 18px 4px 18px; white-space: pre-wrap; word-wrap: break-word; }
+  .doc-tag { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-2); border: 1px solid var(--border); background: var(--surface); padding: 3px 10px; border-radius: 99px; max-width: 78%; }
+  .doc-tag span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .msg.bot { gap: 14px; align-items: flex-start; }
+  .bot-body { flex: 1; min-width: 0; padding-top: 3px; }
+  .status { display: flex; align-items: center; gap: 10px; color: var(--text-2); font-size: 14px; }
+  .dots { display: inline-flex; gap: 4px; }
+  .dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--c-500); animation: bounce 1.2s infinite ease-in-out; }
+  .dots i:nth-child(2) { animation-delay: .15s; }
+  .dots i:nth-child(3) { animation-delay: .3s; }
+  .status-time { color: var(--text-3); font-variant-numeric: tabular-nums; font-size: 13px; }
+  .stream { white-space: pre-wrap; }
+
+  .answer { word-wrap: break-word; }
+  .answer p { margin: 0 0 12px; }
+  .answer p:last-child { margin-bottom: 0; }
+  .answer ul, .answer ol { margin: 4px 0 12px; padding-left: 22px; }
+  .answer li { margin: 5px 0; }
+  .answer li::marker { color: var(--c-300); }
+  .answer h4 { font-size: 15.5px; margin: 16px 0 6px; }
+  .answer strong { color: #fff; font-weight: 650; }
+  .answer code { background: var(--surface); border: 1px solid var(--border); padding: 1px 6px; border-radius: 6px; font-size: .9em; }
+  a.cite {
+    display: inline-grid; place-items: center; min-width: 17px; height: 17px; padding: 0 4px; margin: 0 1px;
+    border-radius: 6px; background: var(--accent-soft); color: var(--c-500); font-size: 11px; font-weight: 700;
+    text-decoration: none; vertical-align: 2px; line-height: 1;
+  }
+  a.cite:hover { background: var(--c-600); color: #fff; }
+
+  .meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .tag { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 99px; border: 1px solid var(--border); color: var(--text-3); }
+  .tag.ok { color: var(--ok); border-color: rgba(92, 201, 167, .35); background: rgba(92, 201, 167, .07); }
+  .tag.warn { color: var(--warn); border-color: rgba(227, 196, 110, .35); background: rgba(227, 196, 110, .07); }
+
+  .sources { margin-top: 16px; }
+  .sources-h { font-size: 12px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .src-list { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; }
+  .src {
+    display: flex; align-items: center; gap: 9px; max-width: 100%; padding: 7px 12px 7px 7px;
+    border: 1px solid var(--border); border-radius: 10px; background: rgba(3, 47, 48, .55); font-size: 13px;
+    transition: border-color .2s, background .2s;
+  }
+  .src-n { width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; background: var(--accent-soft); color: var(--c-500); font-weight: 700; font-size: 12px; flex: none; }
+  .src-file { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 300px; color: var(--text-2); }
+  .src-page { color: var(--text-3); white-space: nowrap; }
+  .src.flash { border-color: var(--c-500); background: var(--accent-soft); }
+
+  .notice { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); }
+  .notice.err { border-color: rgba(232, 144, 127, .35); color: var(--danger); }
+  .notice.err p { color: var(--text-2); }
+  .limit-card { border: 1px solid rgba(12, 150, 156, .4); background: linear-gradient(160deg, rgba(12, 150, 156, .14), rgba(3, 47, 48, .7)); border-radius: 16px; padding: 18px 20px; }
+  .limit-card h3 { font-size: 16px; margin-bottom: 4px; }
+  .limit-card p { color: var(--text-2); font-size: 14px; margin-bottom: 14px; }
+
+  /* ── composer ────────────────────────────────────────────────────────── */
+  .composer-wrap { padding: 8px 24px 18px; }
+  .composer { max-width: 800px; margin: 0 auto; }
+  .composer-box {
+    background: var(--surface); border: 1px solid var(--border-strong); border-radius: 22px;
+    box-shadow: var(--shadow); transition: border-color .15s, box-shadow .15s;
+  }
+  .composer-box:focus-within { border-color: rgba(12, 150, 156, .7); box-shadow: 0 0 0 4px rgba(12, 150, 156, .12), var(--shadow); }
+  .attach-row { padding: 10px 10px 0; }
+  .doc-chip {
+    display: inline-flex; align-items: center; gap: 10px; max-width: 100%;
+    padding: 8px 8px 8px 10px; border-radius: 13px; background: var(--surface-2); border: 1px solid var(--border);
+  }
+  .doc-ic { width: 36px; height: 36px; border-radius: 9px; display: grid; place-items: center; background: var(--c-600); color: #fff; flex: none; }
+  .doc-chip.error .doc-ic { background: rgba(232, 144, 127, .18); color: var(--danger); }
+  .doc-info { min-width: 0; }
+  .doc-name { font-size: 13.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 360px; }
+  .doc-meta { font-size: 12px; color: var(--text-3); display: flex; align-items: center; gap: 6px; }
+  .doc-chip.error .doc-meta { color: var(--danger); }
+  .doc-x { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; color: var(--text-3); flex: none; }
+  .doc-x:hover { background: var(--raised); color: var(--text); }
+  .spin { width: 12px; height: 12px; border-radius: 50%; border: 2px solid rgba(107, 163, 190, .3); border-top-color: var(--c-500); animation: spin .8s linear infinite; }
+
+  .input-row { display: flex; align-items: flex-end; gap: 8px; padding: 8px 8px 8px 8px; }
+  .icon-btn { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; color: var(--text-2); flex: none; transition: background .15s, color .15s; }
+  .icon-btn:hover:not(:disabled) { background: var(--surface-2); color: var(--text); }
+  .icon-btn:disabled { opacity: .4; cursor: not-allowed; }
+  textarea#q {
+    flex: 1; resize: none; border: 0; outline: none; background: transparent; color: var(--text);
+    font: inherit; font-size: 15px; line-height: 1.5; padding: 9px 4px; max-height: 200px; min-height: 42px;
+    overflow-y: auto;
+  }
+  textarea#q::placeholder { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  textarea#q::placeholder { color: var(--text-3); }
+  textarea#q:disabled { cursor: not-allowed; }
+  .send { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--c-500); color: #fff; flex: none; transition: background .15s, opacity .15s; }
+  .send:hover:not(:disabled) { background: #0fb1b8; }
+  .send:disabled { background: var(--raised); color: var(--text-3); cursor: not-allowed; }
+  .hint { display: flex; justify-content: space-between; gap: 12px; margin-top: 9px; padding: 0 6px; font-size: 12px; color: var(--text-3); }
+  .hint b { color: var(--text-2); font-weight: 600; }
+
+  /* ── drop overlay ────────────────────────────────────────────────────── */
+  .drop {
+    position: fixed; inset: 0; z-index: 40; display: grid; place-items: center;
+    background: rgba(3, 23, 22, .82); backdrop-filter: blur(4px);
+  }
+  .drop-box { border: 2px dashed var(--c-500); border-radius: 24px; padding: 48px 64px; text-align: center; background: rgba(3, 47, 48, .7); }
+  .drop-box .ic { width: 40px; height: 40px; color: var(--c-500); margin-bottom: 12px; }
+  .drop-box strong { display: block; font-size: 18px; }
+  .drop-box span { color: var(--text-2); font-size: 14px; }
+
+  /* ── modal ───────────────────────────────────────────────────────────── */
+  .modal { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 20px; }
+  .modal-backdrop { position: absolute; inset: 0; background: rgba(1, 10, 10, .72); backdrop-filter: blur(3px); }
+  .modal-card {
+    position: relative; width: 100%; max-width: 760px; max-height: calc(100vh - 40px); overflow-y: auto;
+    background: var(--surface); border: 1px solid var(--border-strong); border-radius: 22px; box-shadow: var(--shadow);
+    padding: 32px; animation: pop .2s ease both;
+  }
+  .modal-x { position: absolute; top: 16px; right: 16px; width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; color: var(--text-3); }
+  .modal-x:hover { background: var(--surface-2); color: var(--text); }
+  .modal-card h2 { font-size: 24px; letter-spacing: -.015em; }
+  .modal-card .sub { color: var(--text-2); margin-top: 6px; }
+  .plans { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 24px; }
+  .plan { border: 1px solid var(--border); border-radius: 18px; padding: 22px; display: flex; flex-direction: column; background: rgba(3, 23, 22, .35); }
+  .plan.pro { border-color: rgba(12, 150, 156, .6); background: linear-gradient(170deg, rgba(12, 150, 156, .16), rgba(3, 47, 48, .4)); position: relative; }
+  .plan-flag { position: absolute; top: -11px; left: 22px; background: var(--c-500); color: #fff; font-size: 11.5px; font-weight: 700; padding: 3px 10px; border-radius: 99px; }
+  .plan-name { font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+  .price { margin: 10px 0 2px; display: flex; align-items: baseline; gap: 6px; }
+  .price b { font-size: 36px; letter-spacing: -.02em; }
+  .price span { color: var(--text-3); font-size: 14px; }
+  .plan-desc { color: var(--text-3); font-size: 13.5px; }
+  .plan ul { list-style: none; margin: 18px 0 22px; display: grid; gap: 10px; flex: 1; }
+  .plan li { display: flex; gap: 10px; font-size: 14px; color: var(--text-2); }
+  .plan li .ic { color: var(--c-500); margin-top: 2px; }
+  .fine { color: var(--text-3); font-size: 12.5px; margin-top: 16px; text-align: center; }
+
+  .back { display: inline-flex; align-items: center; gap: 6px; color: var(--text-2); font-size: 13.5px; margin-bottom: 14px; }
+  .back:hover { color: var(--text); }
+  .checkout { display: grid; grid-template-columns: 1fr 1.1fr; gap: 20px; margin-top: 22px; }
+  .panel { border: 1px solid var(--border); border-radius: 16px; padding: 20px; background: rgba(3, 23, 22, .35); }
+  .panel-h { font-size: 12px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 14px; }
+  .line { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; padding: 6px 0; color: var(--text-2); }
+  .line.total { border-top: 1px solid var(--border); margin-top: 8px; padding-top: 14px; color: var(--text); font-weight: 700; font-size: 16px; }
+  .product { display: flex; gap: 12px; align-items: center; padding-bottom: 14px; margin-bottom: 8px; border-bottom: 1px solid var(--border); }
+  .product strong { display: block; }
+  .product span { font-size: 13px; color: var(--text-3); }
+  .methods { display: grid; gap: 8px; }
+  .method { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; text-align: left; font-size: 14px; transition: border-color .15s, background .15s; }
+  .method:hover { border-color: var(--border-strong); }
+  .method .radio { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--text-3); flex: none; display: grid; place-items: center; }
+  .method[aria-checked="true"] { border-color: var(--c-500); background: var(--accent-soft); }
+  .method[aria-checked="true"] .radio { border-color: var(--c-500); }
+  .method[aria-checked="true"] .radio::after { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--c-500); }
+  .method small { margin-left: auto; color: var(--text-3); font-size: 12px; }
+  .billing-to { font-size: 13px; color: var(--text-3); margin: 16px 0; }
+  .billing-to b { color: var(--text-2); font-weight: 600; }
+  #payNote { margin-top: 14px; }
+
+  /* ── advanced details ─────────────────────────────────────────────────── */
+  .adv-toggle { display: inline-flex; align-items: center; gap: 6px; margin-top: 14px; font-size: 13px; font-weight: 600; color: var(--c-300); padding: 4px 2px; }
+  .adv-toggle:hover { color: var(--text); }
+  .adv-toggle .ic { transition: transform .2s; }
+  .adv-toggle[aria-expanded="true"] .ic { transform: rotate(180deg); }
+  .adv { margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .adv-sec { border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; background: rgba(3, 47, 48, .55); }
+  .adv-h { font-size: 12px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 10px; }
+  .adv-row { display: flex; justify-content: space-between; gap: 12px; font-size: 13.5px; padding: 3px 0; color: var(--text-2); }
+  .adv-row b { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .adv-verdict { margin-top: 10px; font-size: 13px; font-weight: 600; padding: 7px 10px; border-radius: 9px; }
+  .adv-verdict.ok { color: var(--ok); background: rgba(92, 201, 167, .08); }
+  .adv-verdict.warn { color: var(--warn); background: rgba(227, 196, 110, .08); }
+  .adv-verdict.bad { color: var(--danger); background: rgba(232, 144, 127, .08); }
+  .adv-note { font-size: 12.5px; color: var(--text-3); margin-top: 8px; }
+  .meterbar { position: relative; height: 8px; border-radius: 99px; margin: 6px 0 4px; background: rgba(107, 163, 190, .18); }
+  .meterbar.zones { background: linear-gradient(90deg, rgba(232, 144, 127, .35) 0 35%, rgba(227, 196, 110, .35) 35% 50%, rgba(92, 201, 167, .35) 50% 100%); }
+  .meterbar .fill { position: absolute; inset: 0 auto 0 0; border-radius: 99px; background: var(--c-500); }
+  .meterbar .mark { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--text); border-radius: 2px; }
+  .meterbar .dot { position: absolute; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: var(--text); border: 3px solid var(--c-600); }
+  .scale { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+
+  @keyframes bounce { 0%, 80%, 100% { transform: scale(.55); opacity: .5; } 40% { transform: scale(1); opacity: 1; } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  @keyframes pop { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  }
+
+  /* ── small screens ───────────────────────────────────────────────────── */
+  @media (max-width: 900px) {
+    /* one column, with sign-in straight after the headline so it needs no scrolling */
+    .l-main { grid-template-columns: 1fr; gap: 0; padding-top: 8px; }
+    .l-copy { display: contents; }
+    .eyebrow { justify-self: start; }
+    .l-copy h1 { margin: 16px 0 12px; }
+    .signin { order: 1; margin-top: 26px; }
+    .features { order: 2; margin-top: 34px; }
+    .preview { display: none; }
+    .caps { grid-template-columns: 1fr; }
+    .plans, .checkout { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 600px) {
+    .adv { grid-template-columns: 1fr; }
+    .topbar { padding: 0 12px; gap: 8px; }
+    .topbar .brand span { display: none; }
+    .meter-text { display: none; }
+    #upgradeBtn span { display: none; }
+    #upgradeBtn { padding: 0 11px; }
+    .thread-inner { padding: 20px 14px; }
+    .composer-wrap { padding: 6px 10px 12px; }
+    .bubble { max-width: 90%; }
+    .hint { flex-direction: column; gap: 2px; }
+    .modal-card { padding: 24px 18px; }
+    .l-top, .l-main { padding-left: 18px; padding-right: 18px; }
+    .doc-name { max-width: 190px; }
+  }
 </style>
 </head>
 <body>
-<header>
-  <h1>ACSH-RAG</h1>
-  <span>hybrid retrieval &middot; adaptive routing &middot; cited answers</span>
-  <div id="acct" hidden>
-    <span id="usage" class="chip"></span>
-    <span id="plan" class="chip"></span>
-    <img id="avatar" alt="" referrerpolicy="no-referrer" hidden>
-    <span id="uname"></span>
-    <button id="signout" class="ghost" type="button">Sign out</button>
-  </div>
-</header>
 
-<main id="gate" hidden>
-  <div class="gate-card">
-    <h2>Sign in to start asking</h2>
-    <p id="gateCopy">Ask questions about your documents and get answers backed by cited sources.</p>
-    <a id="gbtn" class="gbtn" href="/auth/login">
-      <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
-      Sign in with Google
-    </a>
-    <div id="gateNote" role="alert"></div>
-  </div>
-</main>
+<!-- icon sprite -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-logo" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9 15 2 2 4-4"/></symbol>
+  <symbol id="i-clip" viewBox="0 0 24 24"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-out" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></symbol>
+  <symbol id="i-zap" viewBox="0 0 24 24"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+  <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M12 13v8"/><path d="M4 14.9A7 7 0 1 1 15.7 8h1.8a4.5 4.5 0 0 1 2.5 8.24"/><path d="m8 17 4-4 4 4"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-scan" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 8h8"/><path d="M7 12h10"/><path d="M7 16h6"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></symbol>
+  <symbol id="i-card" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2"/><path d="M12 18h.01"/></symbol>
+  <symbol id="i-bank" viewBox="0 0 24 24"><path d="M3 22h18"/><path d="M6 18v-7"/><path d="M10 18v-7"/><path d="M14 18v-7"/><path d="M18 18v-7"/><path d="m12 2 8 5H4z"/></symbol>
+  <symbol id="i-route" viewBox="0 0 24 24"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></symbol>
+</svg>
 
+<!-- ═══════════════════════════ signed out ═══════════════════════════ -->
+<div id="landing" hidden>
+  <div class="l-top">
+    <div class="brand"><div class="mark"><svg class="ic"><use href="#i-logo"/></svg></div>ACSH-RAG</div>
+  </div>
+  <main class="l-main">
+    <section class="l-copy">
+      <span class="eyebrow"><svg class="ic sm"><use href="#i-shield"/></svg>Every answer cited to the page</span>
+      <h1>Answers you can check, <span>straight from your documents.</span></h1>
+      <p>Upload a PDF, Markdown or text file and ask questions about it. ACSH-RAG finds the relevant passages, writes an answer from them alone, and checks every sentence before you see it.</p>
+      <ul class="features">
+        <li><div class="feat-ic"><svg class="ic"><use href="#i-layers"/></svg></div><div><strong>Three ways of searching at once</strong><span>Meaning, exact keywords and connected concepts, combined into one ranking.</span></div></li>
+        <li><div class="feat-ic"><svg class="ic"><use href="#i-book"/></svg></div><div><strong>Cited to the exact page</strong><span>Click any citation to see which file and page the claim came from.</span></div></li>
+        <li><div class="feat-ic"><svg class="ic"><use href="#i-scan"/></svg></div><div><strong>Reads scanned PDFs</strong><span>Pages without a text layer are read on our server before they're indexed.</span></div></li>
+      </ul>
+      <div class="preview" aria-hidden="true">
+        <div class="pv-q">What notice period does the agreement require?</div>
+        <div class="pv-a">
+          <div class="mark sm"><svg class="ic"><use href="#i-logo"/></svg></div>
+          <div>
+            <p>Either party may end the agreement with 30 days' written notice<sup class="cite-mock">1</sup>, and notice must be sent to the registered address<sup class="cite-mock">2</sup>.</p>
+            <div class="pv-src"><svg class="ic sm"><use href="#i-file"/></svg>Service_Agreement.pdf · p. 4</div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="signin">
+      <h2>Sign in to continue</h2>
+      <p>Use your Google account. It takes a few seconds.</p>
+      <a id="gbtn" class="gbtn" href="/auth/login">
+        <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        Continue with Google
+      </a>
+      <div class="tiers">
+        <div class="tier"><div class="t-name">Free</div><div class="t-val" id="tierFree">3 questions a day</div><div class="t-sub">No card needed</div></div>
+        <div class="tier pro"><div class="t-name">Pro</div><div class="t-val">$20 / month</div><div class="t-sub" id="tierPro">200 questions a day</div></div>
+      </div>
+      <div id="gateNote" role="alert"></div>
+    </section>
+  </main>
+</div>
+
+<!-- ═══════════════════════════ signed in ═══════════════════════════ -->
 <div id="app" hidden>
-  <div id="srcbar">
-    <label id="uploadBtn">
-      &#128196; Upload a document
-      <input id="fileInput" type="file" accept=".pdf,.md,.markdown,.txt" hidden>
-    </label>
-    <span id="srcStatus">Using the default corpus. Upload a PDF/text file to ask about your own document.</span>
-  </div>
+  <header class="topbar">
+    <div class="brand"><div class="mark sm"><svg class="ic"><use href="#i-logo"/></svg></div><span>ACSH-RAG</span></div>
+    <div id="meter" class="meter" title="">
+      <span class="meter-text" id="meterText"></span>
+      <div class="meter-bar"><div class="meter-fill" id="meterFill"></div></div>
+    </div>
+    <button id="upgradeBtn" class="btn btn-pro" type="button" data-upgrade><svg class="ic sm"><use href="#i-zap"/></svg><span>Upgrade</span></button>
+    <div class="menu-wrap">
+      <button id="avatarBtn" class="avatar-btn" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Account menu">
+        <span class="avatar" id="avatar"></span><svg class="ic sm"><use href="#i-chev"/></svg>
+      </button>
+      <div id="menu" class="menu" role="menu" hidden>
+        <div class="menu-head"><div class="mh-name" id="mhName"></div><div class="mh-email" id="mhEmail"></div></div>
+        <div class="menu-plan"><span>Current plan</span><span class="badge" id="menuPlan">Free</span></div>
+        <button class="menu-item accent" type="button" role="menuitem" id="menuUpgrade" data-upgrade><svg class="ic"><use href="#i-zap"/></svg>Upgrade to Pro</button>
+        <button class="menu-item" type="button" role="menuitem" id="menuBilling"><svg class="ic"><use href="#i-card"/></svg>Plans and billing</button>
+        <button class="menu-item" type="button" role="menuitem" id="signout"><svg class="ic"><use href="#i-out"/></svg>Sign out</button>
+      </div>
+    </div>
+  </header>
 
-  <div id="chat">
-    <div class="msg bot">Ask me anything about the ingested documents. Every answer is grounded in the sources and cited &mdash; if the documents don't cover it, I'll say so.</div>
-  </div>
+  <main id="thread">
+    <div class="thread-inner">
+      <section id="empty" class="empty">
+        <div class="mark"><svg class="ic"><use href="#i-logo"/></svg></div>
+        <h1 id="greeting">What would you like to know?</h1>
+        <p>Attach a document with the paperclip, or drop it anywhere on the page. Without one, answers come from the built-in library.</p>
+        <div class="caps">
+          <div class="cap"><svg class="ic"><use href="#i-book"/></svg><strong>Cited to the page</strong><span>Every claim links to its source.</span></div>
+          <div class="cap"><svg class="ic"><use href="#i-shield"/></svg><strong>Checked before you see it</strong><span>Unsupported sentences are removed.</span></div>
+          <div class="cap"><svg class="ic"><use href="#i-scan"/></svg><strong>Scanned PDFs welcome</strong><span>Image-only pages are read too.</span></div>
+        </div>
+      </section>
+      <div id="messages"></div>
+    </div>
+  </main>
 
-  <form id="form">
-    <input id="q" type="text" placeholder="Ask a question..." autocomplete="off" autofocus>
-    <button id="send" type="submit">Ask</button>
-  </form>
+  <footer class="composer-wrap">
+    <div class="composer">
+      <div class="composer-box">
+        <div class="attach-row" id="attachRow" hidden></div>
+        <form class="input-row" id="form">
+          <button type="button" class="icon-btn" id="attachBtn" aria-label="Attach a document" title="Attach a document (PDF, Markdown or text)"><svg class="ic"><use href="#i-clip"/></svg></button>
+          <input id="fileInput" type="file" accept=".pdf,.md,.markdown,.txt" hidden>
+          <textarea id="q" rows="1" placeholder="Ask about your documents" autocomplete="off"></textarea>
+          <button type="submit" class="send" id="send" aria-label="Send"><svg class="ic"><use href="#i-up"/></svg></button>
+        </form>
+      </div>
+      <div class="hint"><span id="sourceHint">Answering from <b>the built-in library</b></span><span>Enter to send · Shift + Enter for a new line</span></div>
+    </div>
+  </footer>
+</div>
+
+<!-- drag-and-drop overlay -->
+<div id="drop" class="drop" hidden>
+  <div class="drop-box"><svg class="ic"><use href="#i-cloud"/></svg><strong>Drop your document to attach it</strong><span>PDF, Markdown or plain text</span></div>
+</div>
+
+<!-- upgrade / checkout -->
+<div id="modal" class="modal" hidden>
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <button class="modal-x" type="button" data-close aria-label="Close"><svg class="ic"><use href="#i-x"/></svg></button>
+
+    <section id="viewPlans">
+      <h2 id="modalTitle">Choose your plan</h2>
+      <p class="sub">Ask more questions every day about the documents you work with most.</p>
+      <div class="plans">
+        <div class="plan">
+          <div class="plan-name">Free</div>
+          <div class="price"><b>$0</b><span>forever</span></div>
+          <div class="plan-desc">For trying it out.</div>
+          <ul>
+            <li><svg class="ic sm"><use href="#i-check"/></svg><span id="planFreeLimit">3 questions a day</span></li>
+            <li><svg class="ic sm"><use href="#i-check"/></svg>Upload your own documents</li>
+            <li><svg class="ic sm"><use href="#i-check"/></svg>Answers cited to the page</li>
+            <li><svg class="ic sm"><use href="#i-check"/></svg>Scanned PDF support</li>
+          </ul>
+          <button class="btn btn-ghost btn-block" type="button" id="freeBtn" disabled>Your current plan</button>
+        </div>
+        <div class="plan pro">
+          <span class="plan-flag">Recommended</span>
+          <div class="plan-name"><svg class="ic sm"><use href="#i-zap"/></svg>Pro</div>
+          <div class="price"><b>$20</b><span>/ month</span></div>
+          <div class="plan-desc">For regular work with your documents.</div>
+          <ul>
+            <li><svg class="ic sm"><use href="#i-check"/></svg><span id="planProLimit">200 questions a day</span></li>
+            <li><svg class="ic sm"><use href="#i-check"/></svg>Upload your own documents</li>
+            <li><svg class="ic sm"><use href="#i-check"/></svg>Answers cited to the page</li>
+            <li><svg class="ic sm"><use href="#i-check"/></svg>Scanned PDF support</li>
+          </ul>
+          <button class="btn btn-pro btn-block" type="button" id="toCheckout">Upgrade to Pro</button>
+        </div>
+      </div>
+      <p class="fine">Prices in US dollars. Billed monthly.</p>
+    </section>
+
+    <section id="viewCheckout" hidden>
+      <button class="back" type="button" id="backToPlans"><svg class="ic sm"><use href="#i-left"/></svg>Back to plans</button>
+      <h2>Checkout</h2>
+      <p class="sub">Review your order and choose how to pay.</p>
+      <div class="checkout">
+        <div class="panel">
+          <div class="panel-h">Order summary</div>
+          <div class="product">
+            <div class="mark"><svg class="ic"><use href="#i-zap"/></svg></div>
+            <div><strong>ACSH-RAG Pro</strong><span>Monthly subscription</span></div>
+          </div>
+          <div class="line"><span>Pro plan × 1 month</span><span>$20.00</span></div>
+          <div class="line"><span>Subtotal</span><span>$20.00</span></div>
+          <div class="line total"><span>Due today</span><span>$20.00</span></div>
+          <div class="fine" style="text-align:left">Renews every month at $20.00.</div>
+        </div>
+        <div class="panel">
+          <div class="panel-h">Payment method</div>
+          <div class="methods" role="radiogroup" aria-label="Payment method">
+            <button class="method" type="button" role="radio" aria-checked="true"><span class="radio"></span><svg class="ic"><use href="#i-card"/></svg>Card<small>Visa · Mastercard · RuPay</small></button>
+            <button class="method" type="button" role="radio" aria-checked="false"><span class="radio"></span><svg class="ic"><use href="#i-phone"/></svg>UPI</button>
+            <button class="method" type="button" role="radio" aria-checked="false"><span class="radio"></span><svg class="ic"><use href="#i-bank"/></svg>Net banking</button>
+          </div>
+          <div class="billing-to">Receipts will be sent to <b id="billEmail"></b></div>
+          <button class="btn btn-pro btn-block" type="button" id="payBtn">Pay $20.00</button>
+          <div id="payNote" class="notice" role="status" hidden>
+            <svg class="ic" style="color:var(--c-500)"><use href="#i-alert"/></svg>
+            <div><strong>Payments aren't live yet.</strong><p style="color:var(--text-2);font-size:13.5px">You haven't been charged. Pro will be available to buy soon.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
 </div>
 
 <script>
-const chat = document.getElementById("chat");
-const form = document.getElementById("form");
-const input = document.getElementById("q");
-const send = document.getElementById("send");
-const fileInput = document.getElementById("fileInput");
-const srcStatus = document.getElementById("srcStatus");
-let sessionId = null;
+const $ = (sel) => document.querySelector(sel);
+const esc = s => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+const icon = (id, cls = "") => `<svg class="ic ${cls}" aria-hidden="true"><use href="#i-${id}"/></svg>`;
 
-// ── accounts ────────────────────────────────────────────────────────────────
-const $ = id => document.getElementById(id);
-let me = null, usage = null, busy = false;
-const DEFAULT_PLACEHOLDER = input.placeholder;
+const thread = $("#thread"), messages = $("#messages"), input = $("#q"), sendBtn = $("#send"),
+      form = $("#form"), fileInput = $("#fileInput"), attachBtn = $("#attachBtn");
+
+const ALLOWED = [".pdf", ".md", ".markdown", ".txt"];
 const AUTH_ERRORS = {
   not_configured: "Google sign-in isn't set up on this server yet.",
   sign_in_failed: "Sign-in was cancelled or didn't complete. Please try again.",
@@ -152,182 +615,402 @@ const AUTH_ERRORS = {
   disabled: "This account has been disabled.",
 };
 
+let me = null, usage = null, busy = false, uploading = false, sessionId = null, doc = null, msgSeq = 0;
+
+// ── helpers ──────────────────────────────────────────────────────────────────
 function whenReset(iso) {
   const d = new Date(iso);
   const time = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
   return d.toDateString() === new Date().toDateString() ? `today at ${time}` : `tomorrow at ${time}`;
 }
-
-function applyLimitState() {
-  const out = !!usage && usage.remaining <= 0;
-  send.disabled = busy || out;
-  input.disabled = out;
-  input.placeholder = out ? `Daily limit reached — resets ${whenReset(usage.resets_at)}` : DEFAULT_PLACEHOLDER;
+function fmtSize(b) {
+  if (!b && b !== 0) return "";
+  return b < 1024 * 1024 ? `${Math.max(1, Math.round(b / 1024))} KB` : `${(b / 1024 / 1024).toFixed(1)} MB`;
+}
+function nearBottom() { return thread.scrollHeight - thread.scrollTop - thread.clientHeight < 160; }
+function scrollDown(force) { if (force || nearBottom()) thread.scrollTop = thread.scrollHeight; }
+function autoresize() {
+  input.style.height = "auto";
+  if (!input.value) return;   // empty: keep one line (a long placeholder must not grow the box)
+  input.style.height = Math.min(input.scrollHeight, 200) + "px";
 }
 
-function setUsage(u) {
-  usage = u;
-  const chip = $("usage");
-  chip.textContent = `${u.remaining} of ${u.limit} left today`;
-  chip.className = "chip" + (u.remaining === 0 ? " limit" : "");
-  chip.title = `Resets ${whenReset(u.resets_at)}`;
-  $("plan").textContent = u.plan === "pro" ? "Pro" : "Free";
-  applyLimitState();
-}
-
-function renderAuth(note) {
-  const signedIn = !!me.authenticated;
-  $("gate").hidden = signedIn;
-  $("app").hidden = !signedIn;
-  $("acct").hidden = !signedIn;
-  if (signedIn) {
-    $("uname").textContent = me.name || me.email;
-    if (me.picture) { $("avatar").src = me.picture; $("avatar").hidden = false; }
-    setUsage(me.usage);
-    input.focus();
-    return;
+// Small, safe Markdown renderer: escapes first, then bold, inline code,
+// headings and nested bullet / numbered lists — the shapes the model produces.
+function renderMarkdown(md) {
+  const inline = s => esc(s).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/`([^`]+?)`/g, "<code>$1</code>");
+  const out = [], stack = [];
+  let para = [];
+  const flushP = () => { if (para.length) { out.push("<p>" + para.map(inline).join("<br>") + "</p>"); para = []; } };
+  const closeTo = (ind) => { while (stack.length && stack[stack.length - 1].ind > ind) out.push(`</${stack.pop().tag}>`); };
+  for (const raw of (md || "").replace(/\r\n/g, "\n").split("\n")) {
+    const bullet = raw.match(/^(\s*)[*\-]\s+(.*)$/), num = raw.match(/^(\s*)\d+[.)]\s+(.*)$/), head = raw.match(/^#{1,4}\s+(.*)$/);
+    const item = bullet || num;
+    if (item) {
+      flushP();
+      const ind = item[1].length, tag = bullet ? "ul" : "ol";
+      closeTo(ind);
+      const top = stack[stack.length - 1];
+      if (!top || top.ind < ind) { out.push(`<${tag}>`); stack.push({ ind, tag }); }
+      else if (top.tag !== tag) { out.push(`</${stack.pop().tag}>`, `<${tag}>`); stack.push({ ind, tag }); }
+      out.push("<li>" + inline(item[2]) + "</li>");
+    } else if (head) {
+      flushP(); closeTo(-1); out.push("<h4>" + inline(head[1]) + "</h4>");
+    } else if (raw.trim() === "") {
+      flushP();
+    } else {
+      closeTo(-1); para.push(raw.trim());
+    }
   }
-  const n = me.demo_limit;
-  $("gateCopy").textContent = "Ask questions about your documents and get answers backed by cited sources." +
-    (n ? ` Free accounts get ${n} question${n === 1 ? "" : "s"} a day.` : "");
-  $("gbtn").classList.toggle("off", !me.login_configured);
-  $("gateNote").textContent = note || (me.disabled ? AUTH_ERRORS.disabled : "");
+  flushP(); closeTo(-1);
+  return out.join("");
 }
 
-function signedOut(note) {
-  me = { authenticated: false, login_configured: true, demo_limit: me && me.demo_limit };
-  renderAuth(note);
-}
-
+// ── auth and usage ───────────────────────────────────────────────────────────
 async function loadMe() {
   const err = new URLSearchParams(location.search).get("auth_error");
   if (err) history.replaceState(null, "", location.pathname);
   try {
     me = await (await fetch("/api/me")).json();
-    renderAuth(err ? (AUTH_ERRORS[err] || AUTH_ERRORS.sign_in_failed) : "");
   } catch (_) {
     me = { authenticated: false, login_configured: true };
-    renderAuth("Couldn't reach the server. Please refresh the page.");
+    return showLanding("Couldn't reach the server. Please refresh the page.");
   }
+  if (me.authenticated) showApp();
+  else showLanding(err ? (AUTH_ERRORS[err] || AUTH_ERRORS.sign_in_failed) : (me.disabled ? AUTH_ERRORS.disabled : ""));
 }
 
-$("signout").addEventListener("click", async () => {
-  try { await fetch("/auth/logout", { method: "POST" }); } finally { location.reload(); }
-});
-
-function add(cls, html) {
-  const d = document.createElement("div");
-  d.className = "msg " + cls;
-  d.innerHTML = html;
-  chat.appendChild(d);
-  chat.scrollTop = chat.scrollHeight;
-  return d;
+function setLimitCopy() {
+  const d = me?.demo_limit, p = me?.pro_limit;
+  const q = n => `${n} question${n === 1 ? "" : "s"} a day`;
+  if (d) { $("#tierFree").textContent = q(d); $("#planFreeLimit").textContent = q(d); }
+  if (p) { $("#tierPro").textContent = q(p); $("#planProLimit").textContent = q(p); }
 }
-const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 
-// Minimal, safe Markdown → HTML (escapes first, then renders bold, inline code,
-// and nested bullet lists — the shapes the LLM actually produces).
-function renderMarkdown(md) {
-  const inline = s => esc(s)
-    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-    .replace(/`([^`]+?)`/g, "<code>$1</code>");
-  const lines = (md || "").replace(/\r\n/g, "\n").split("\n");
-  const out = [], stack = [];
-  let para = [];
-  const flushP = () => { if (para.length) { out.push("<p>" + para.map(inline).join("<br>") + "</p>"); para = []; } };
-  const closeAll = () => { while (stack.length) { out.push("</ul>"); stack.pop(); } };
-  for (const raw of lines) {
-    const m = raw.match(/^(\s*)[*\-]\s+(.*)$/);
-    if (m) {
-      flushP();
-      const ind = m[1].length;
-      while (stack.length && stack[stack.length - 1] > ind) { out.push("</ul>"); stack.pop(); }
-      if (!stack.length || stack[stack.length - 1] < ind) { out.push("<ul>"); stack.push(ind); }
-      out.push("<li>" + inline(m[2]) + "</li>");
-    } else if (raw.trim() === "") {
-      flushP();
-    } else {
-      closeAll(); para.push(raw.trim());
-    }
+function showLanding(note) {
+  setLimitCopy();
+  $("#app").hidden = true;
+  $("#landing").hidden = false;
+  $("#gbtn").classList.toggle("off", me && me.login_configured === false);
+  $("#gateNote").textContent = note || "";
+}
+
+function showApp() {
+  setLimitCopy();
+  $("#landing").hidden = true;
+  $("#app").hidden = false;
+  const name = me.name || me.email || "";
+  $("#mhName").textContent = name;
+  $("#mhEmail").textContent = me.email || "";
+  $("#billEmail").textContent = me.email || "";
+  const av = $("#avatar");
+  if (me.picture) av.innerHTML = `<img src="${esc(me.picture)}" alt="" referrerpolicy="no-referrer">`;
+  else av.textContent = (name.trim()[0] || "?").toUpperCase();
+  const first = (me.name || "").trim().split(/\s+/)[0];
+  if (first) $("#greeting").textContent = `What would you like to know, ${first}?`;
+  setUsage(me.usage);
+  input.focus();
+}
+
+function setUsage(u) {
+  usage = u;
+  const pro = u.plan === "pro";
+  $("#meterText").textContent = `${u.remaining} of ${u.limit} questions left today`;
+  $("#meterFill").style.width = `${u.limit ? (u.remaining / u.limit) * 100 : 0}%`;
+  const meter = $("#meter");
+  meter.classList.toggle("out", u.remaining <= 0);
+  meter.classList.toggle("clickable", !pro);
+  meter.title = `Resets ${whenReset(u.resets_at)}`;
+  $("#upgradeBtn").hidden = pro;
+  $("#menuUpgrade").hidden = pro;
+  const badge = $("#menuPlan");
+  badge.textContent = pro ? "Pro" : "Free";
+  badge.classList.toggle("pro", pro);
+  $("#freeBtn").textContent = pro ? "Free plan" : "Your current plan";
+  const toCheckout = $("#toCheckout");
+  toCheckout.disabled = pro;
+  toCheckout.textContent = pro ? "Your current plan" : "Upgrade to Pro";
+  applyComposerState();
+}
+
+function signedOut(note) {
+  me = { authenticated: false, login_configured: true, demo_limit: me?.demo_limit, pro_limit: me?.pro_limit };
+  showLanding(note);
+}
+
+// ── composer ─────────────────────────────────────────────────────────────────
+function applyComposerState() {
+  const out = !!usage && usage.remaining <= 0;
+  input.disabled = out;
+  attachBtn.disabled = busy || uploading;
+  sendBtn.disabled = busy || uploading || out || !input.value.trim();
+  // Placeholders stay short so they fit on one line on a phone; details go in the hint below.
+  if (out) input.placeholder = "Daily limit reached";
+  else if (uploading) input.placeholder = "Indexing your document…";
+  else if (doc && doc.status === "ready") input.placeholder = "Ask about this document";
+  else input.placeholder = "Ask about your documents";
+  $("#sourceHint").innerHTML = out
+    ? `Your questions reset <b>${esc(whenReset(usage.resets_at))}</b>`
+    : doc && doc.status === "ready"
+      ? `Answering from <b>${esc(doc.name)}</b>`
+      : "Answering from <b>the built-in library</b>";
+}
+
+function renderDoc() {
+  const row = $("#attachRow");
+  if (!doc) { row.hidden = true; row.innerHTML = ""; return; }
+  row.hidden = false;
+  let meta = "", ic = "file", cls = "", close = "";
+  if (doc.status === "uploading") {
+    meta = `<span class="spin"></span>Reading and indexing… larger or scanned files take a minute`;
+  } else if (doc.status === "ready") {
+    const bits = [doc.pages ? `${doc.pages} page${doc.pages === 1 ? "" : "s"}` : "", fmtSize(doc.size), "Ready"].filter(Boolean);
+    meta = `${icon("check", "sm")}${bits.join(" · ")}`;
+    close = `<button class="doc-x" type="button" id="docRemove" aria-label="Remove document" title="Remove document">${icon("x", "sm")}</button>`;
+  } else {
+    ic = "alert"; cls = "error"; meta = esc(doc.error);
+    close = `<button class="doc-x" type="button" id="docRemove" aria-label="Dismiss" title="Dismiss">${icon("x", "sm")}</button>`;
   }
-  flushP(); closeAll();
-  return out.join("");
-}
-
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const q = input.value.trim();
-  if (!q || !me || !me.authenticated || (usage && usage.remaining <= 0)) return;
-  add("user", esc(q));
-  input.value = "";
-  busy = true;
-  send.disabled = true;
-  const wait = add("bot", '<span class="loader"><span></span><span></span><span></span></span><span class="loadtxt">thinking… 0s</span>');
-  const t0 = Date.now();
-  let stageMsg = "thinking…";
-  const paint = () => {
-    const el = wait.querySelector(".loadtxt");
-    if (el) el.textContent = stageMsg + " · " + Math.round((Date.now() - t0) / 1000) + "s";
-  };
-  const timer = setInterval(paint, 1000);
-
-  const renderDone = (evt) => {
-    const cites = evt.citations || [];
-    // Map a chunk number (from chunk_id) -> its 1-based source index.
-    const numByChunk = {};
-    cites.forEach((c, i) => {
-      const m = String(c.chunk_id || "").match(/chunk_(\d+)/);
-      if (m) numByChunk[String(parseInt(m[1], 10))] = i + 1;
-    });
-    // Render markdown, then turn inline [C21] markers into clickable superscripts.
-    let html = renderMarkdown(evt.answer).replace(/\[C(\d+)\]/g, (mm, n) => {
-      const i = numByChunk[String(parseInt(n, 10))];
-      return i ? `<sup class="cite"><a href="#src-${i}">${i}</a></sup>` : "";
-    });
-    if (evt.usage) setUsage(evt.usage);
-    html += `<div class="meta">
-      <span class="chip">route: ${esc(evt.route)}</span>
-      <span class="chip ${esc(evt.confidence)}">confidence: ${esc(evt.confidence)}</span>
+  row.innerHTML = `<div class="doc-chip ${cls}">
+      <div class="doc-ic">${icon(ic)}</div>
+      <div class="doc-info"><div class="doc-name" title="${esc(doc.name)}">${esc(doc.name)}</div><div class="doc-meta">${meta}</div></div>
+      ${close}
     </div>`;
-    if (cites.length) {
-      const cards = cites.map((c, i) => {
-        const file = esc(c.filename || c.chunk_id || "source");
-        const label = c.page ? `${file} — p.${esc(String(c.page))}` : file;
-        return `<span class="srccard" id="src-${i + 1}"><sup>${i + 1}</sup> ${label}</span>`;
-      }).join("");
-      html += `<div class="cites">sources: ${cards}</div>`;
-    }
-    wait.className = "msg bot";
-    wait.innerHTML = html;
-  };
+  const rm = $("#docRemove");
+  if (rm) rm.addEventListener("click", () => { doc = null; sessionId = null; renderDoc(); applyComposerState(); input.focus(); });
+}
 
+async function uploadFile(f) {
+  if (!f || busy || uploading) return;
+  const ext = (f.name.match(/\.[^.]+$/) || [""])[0].toLowerCase();
+  if (!ALLOWED.includes(ext)) {
+    doc = { status: "error", name: f.name, error: "That file type isn't supported. Use a PDF, Markdown or text file." };
+    renderDoc(); return;
+  }
+  sessionId = null;
+  doc = { status: "uploading", name: f.name, size: f.size };
+  uploading = true; renderDoc(); applyComposerState();
+  const fd = new FormData();
+  fd.append("file", f);
+  try {
+    const res = await fetch("/api/upload", { method: "POST", body: fd });
+    const text = await res.text();
+    let data = null;
+    try { data = text ? JSON.parse(text) : null; } catch (_) {}
+    if (res.status === 401) { doc = null; signedOut("Your session has ended. Please sign in again."); return; }
+    if (!res.ok) throw new Error(data?.detail || `The upload failed (error ${res.status}). Please try again.`);
+    if (!data) throw new Error("The server sent an unexpected response. Please try again.");
+    sessionId = data.session_id;
+    doc = { status: "ready", name: data.filename, pages: data.pages, chunks: data.chunks, size: f.size };
+  } catch (err) {
+    sessionId = null;
+    doc = { status: "error", name: f.name, error: err.message };
+  } finally {
+    uploading = false; fileInput.value = "";
+    renderDoc(); applyComposerState();
+    if (doc && doc.status === "ready") input.focus();
+  }
+}
+
+// ── messages ─────────────────────────────────────────────────────────────────
+function hideEmpty() { $("#empty").hidden = true; }
+
+function addUser(q) {
+  const el = document.createElement("div");
+  el.className = "msg user";
+  const tag = doc && doc.status === "ready" ? `<div class="doc-tag">${icon("file", "sm")}<span>${esc(doc.name)}</span></div>` : "";
+  el.innerHTML = `${tag}<div class="bubble">${esc(q)}</div>`;
+  messages.appendChild(el);
+}
+
+function addBot() {
+  const n = ++msgSeq;
+  const el = document.createElement("div");
+  el.className = "msg bot";
+  el.innerHTML = `<div class="mark sm">${icon("logo")}</div><div class="bot-body"></div>`;
+  messages.appendChild(el);
+  const body = el.querySelector(".bot-body");
+  const t0 = Date.now();
+  let label = "Thinking…", streaming = false;
+  const paintStatus = () => {
+    if (streaming) return;
+    body.innerHTML = `<div class="status"><span class="dots"><i></i><i></i><i></i></span><span>${esc(label)}</span>
+      <span class="status-time">${Math.round((Date.now() - t0) / 1000)}s</span></div>`;
+  };
+  paintStatus();
+  const timer = setInterval(paintStatus, 1000);
+  return {
+    n, el, body,
+    stage(l) { label = l; paintStatus(); },
+    token(text) {
+      if (!streaming) { streaming = true; body.innerHTML = `<div class="answer stream"></div>`; }
+      body.querySelector(".stream").textContent += text;
+    },
+    stop() { clearInterval(timer); },
+  };
+}
+
+const CONFIDENCE = {
+  pass: ["ok", "shield", "Verified against the sources"],
+  low_confidence: ["warn", "shield", "Partly verified"],
+  refused: ["", "alert", "No verified answer"],
+  quota_exhausted: ["warn", "alert", "Service busy"],
+};
+const ROUTES = { simple: "Single question", complex: "Multi-part question" };
+
+// ── advanced details: confidence gate + Self-RAG support check ──────────────
+const signed = x => (x < 0 ? "−" : "+") + Math.abs(x).toFixed(2);
+const pctOf = x => `${Math.round(x * 100)}%`;
+// Cross-encoder scores run roughly from −10 to +10; map onto 0–100% of the bar.
+const gaugePos = s => (Math.max(-10, Math.min(10, s)) + 10) * 5;
+
+function renderGate(g) {
+  const retries = `${g.retries_used} of ${g.max_retries}`;
+  let cls, verdict;
+  if (g.score == null) {
+    cls = "bad"; verdict = "No passages were found, so the question was refused.";
+  } else if (g.decision === "pass") {
+    cls = "ok";
+    verdict = g.retries_used
+      ? `Passed after ${g.retries_used} reformulated ${g.retries_used === 1 ? "retry" : "retries"}`
+      : "Passed on the first attempt";
+  } else if (g.decision === "retry") {
+    cls = "bad"; verdict = `Still below the pass threshold after ${retries} retries, so the question was refused`;
+  } else {
+    cls = "bad"; verdict = "Below the retry threshold, so the question was refused";
+  }
+  const bar = g.score == null ? "" : `
+    <div class="meterbar zones">
+      <i class="mark" style="left:${gaugePos(g.retry_threshold)}%" title="Retry threshold"></i>
+      <i class="mark" style="left:${gaugePos(g.pass_threshold)}%" title="Pass threshold"></i>
+      <b class="dot" style="left:${gaugePos(g.score)}%" title="Top passage score"></b>
+    </div>
+    <div class="scale"><span>−10</span><span>refuse · retry · pass</span><span>+10</span></div>`;
+  return `<section class="adv-sec"><div class="adv-h">Retrieval confidence gate</div>${bar}
+    <div class="adv-row"><span>Top passage score</span><b>${g.score == null ? "—" : signed(g.score)}</b></div>
+    <div class="adv-row"><span>Pass threshold</span><b>≥ ${signed(g.pass_threshold)}</b></div>
+    <div class="adv-row"><span>Retry threshold</span><b>≥ ${signed(g.retry_threshold)}</b></div>
+    <div class="adv-row"><span>Retries used</span><b>${retries}</b></div>
+    <div class="adv-verdict ${cls}">${esc(verdict)}</div></section>`;
+}
+
+function renderVerification(d) {
+  const v = d.verification;
+  const head = `<section class="adv-sec"><div class="adv-h">Self-RAG answer check</div>`;
+  if (!v) {
+    const why = d.insufficient_context
+      ? "Not run: the passages passed the gate, but the answer step found they don't contain the answer, so it declined."
+      : "Not run: no answer was written because the question was refused at the gate.";
+    return `${head}<div class="adv-note" style="margin-top:0">${esc(why)}</div></section>`;
+  }
+  if (v.checked === false) {
+    return `${head}<div class="adv-row"><span>Acceptance threshold</span><b>≥ ${pctOf(v.threshold ?? 0)}</b></div>
+      <div class="adv-verdict warn">The check couldn't be completed, so the answer was shown unverified</div></section>`;
+  }
+  const supported = v.sentences_checked - v.sentences_unsupported;
+  let cls, verdict;
+  if (v.verdict === "pass") {
+    cls = "ok"; verdict = "Every sentence supported: answer accepted";
+  } else if (v.verdict === "partial") {
+    cls = "warn";
+    verdict = `${v.sentences_unsupported} unsupported sentence${v.sentences_unsupported === 1 ? "" : "s"} removed: rest accepted`;
+  } else if (v.support_ratio >= v.threshold) {
+    cls = "bad"; verdict = "Judged not grounded as a whole: answer withheld";
+  } else {
+    cls = "bad"; verdict = `Below the ${pctOf(v.threshold)} threshold: answer withheld`;
+  }
+  return `${head}
+    <div class="meterbar">
+      <div class="fill" style="width:${v.support_ratio * 100}%"></div>
+      <i class="mark" style="left:${v.threshold * 100}%" title="Acceptance threshold"></i>
+    </div>
+    <div class="scale"><span>0%</span><span>100%</span></div>
+    <div class="adv-row"><span>Sentences supported</span><b>${supported} of ${v.sentences_checked}</b></div>
+    <div class="adv-row"><span>Support score</span><b>${pctOf(v.support_ratio)}</b></div>
+    <div class="adv-row"><span>Acceptance threshold</span><b>≥ ${pctOf(v.threshold)}</b></div>
+    <div class="adv-verdict ${cls}">${esc(verdict)}</div>
+    ${v.explanation ? `<div class="adv-note">${esc(v.explanation)}</div>` : ""}</section>`;
+}
+
+function renderDetails(n, d) {
+  if (!d || !d.gate) return "";
+  return `<button class="adv-toggle" type="button" aria-expanded="false" aria-controls="adv-${n}">
+      ${icon("chev", "sm")}See advanced details</button>
+    <div class="adv" id="adv-${n}" hidden>${renderGate(d.gate)}${renderVerification(d)}</div>`;
+}
+
+function renderDone(view, evt) {
+  if (evt.usage) setUsage(evt.usage);
+  const cites = evt.citations || [];
+  const indexByChunk = {};
+  cites.forEach((c, i) => {
+    const m = String(c.chunk_id || "").match(/chunk_(\d+)/);
+    if (m) indexByChunk[String(parseInt(m[1], 10))] = i + 1;
+  });
+  const sid = i => `m${view.n}-s${i}`;
+  let html = `<div class="answer">` + renderMarkdown(evt.answer).replace(/\[C(\d+)\]/g, (_, num) => {
+    const i = indexByChunk[String(parseInt(num, 10))];
+    return i ? `<a class="cite" href="#${sid(i)}" data-target="${sid(i)}" title="Source ${i}">${i}</a>` : "";
+  }) + `</div>`;
+
+  const [cls, ic, label] = CONFIDENCE[evt.confidence] || ["", "alert", evt.confidence || "Answer"];
+  const route = ROUTES[evt.route];
+  html += `<div class="meta"><span class="tag ${cls}">${icon(ic, "sm")}${esc(label)}</span>` +
+          (route ? `<span class="tag">${icon("route", "sm")}${esc(route)}</span>` : "") + `</div>`;
+
+  if (cites.length) {
+    html += `<div class="sources"><div class="sources-h">${icon("book", "sm")}Sources</div><ol class="src-list">` +
+      cites.map((c, i) => `<li class="src" id="${sid(i + 1)}"><span class="src-n">${i + 1}</span>
+        <span class="src-file" title="${esc(c.filename || "")}">${esc(c.filename || "Source")}</span>
+        ${c.page ? `<span class="src-page">p. ${esc(String(c.page))}</span>` : ""}</li>`).join("") +
+      `</ol></div>`;
+  }
+  html += renderDetails(view.n, evt.details);
+  view.body.innerHTML = html;
+}
+
+function renderLimit(view, body) {
+  const pro = usage && usage.plan === "pro";
+  const resets = body.resets_at ? whenReset(body.resets_at) : "tomorrow";
+  view.body.innerHTML = pro
+    ? `<div class="limit-card"><h3>You've reached today's limit</h3><p>Your questions reset ${resets}.</p></div>`
+    : `<div class="limit-card"><h3>You've used today's free questions</h3>
+        <p>Your free questions reset ${resets}. Upgrade to Pro for ${me?.pro_limit || 200} questions a day.</p>
+        <button class="btn btn-pro" type="button" data-upgrade>${icon("zap", "sm")}Upgrade to Pro · $20/month</button></div>`;
+}
+
+function renderError(view, message) {
+  view.body.innerHTML = `<div class="notice err">${icon("alert")}<div><strong>Something went wrong</strong><p>${esc(message)}</p></div></div>`;
+}
+
+async function ask() {
+  const q = input.value.trim();
+  if (!q || busy || uploading || !me?.authenticated || (usage && usage.remaining <= 0)) return;
+  hideEmpty();
+  addUser(q);
+  input.value = ""; autoresize();
+  busy = true; applyComposerState();
+  const view = addBot();
+  scrollDown(true);
   try {
     const res = await fetch("/api/ask_stream", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ question: q, session_id: sessionId }),
     });
-    if (res.status === 401) {
-      wait.remove();
-      signedOut("Your session has ended. Please sign in again.");
-      return;
-    }
+    if (res.status === 401) { view.el.remove(); signedOut("Your session has ended. Please sign in again."); return; }
     if (res.status === 429) {
       const body = await res.json().catch(() => ({}));
       if (body.usage) setUsage(body.usage);
-      wait.className = "msg bot";
-      wait.innerHTML = `<span class="chip limit">daily limit reached</span> You've used all of today's messages. ` +
-        `Your allowance resets ${whenReset(body.resets_at)}. Pro plans with a higher limit are coming soon.`;
-      return;
+      renderLimit(view, body); return;
     }
     if (!res.ok || !res.body) {
       let detail = res.statusText;
       try { detail = (await res.json()).detail || detail; } catch (_) {}
-      throw new Error(detail);
+      throw new Error(detail || `Request failed (${res.status}).`);
     }
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let buf = "", finished = false, streaming = false, answerText = "";
+    const reader = res.body.getReader(), decoder = new TextDecoder();
+    let buf = "", finished = false;
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
@@ -339,73 +1022,105 @@ form.addEventListener("submit", async (e) => {
         if (!frame.startsWith("data:")) continue;
         let evt;
         try { evt = JSON.parse(frame.slice(5).trim()); } catch (_) { continue; }
-        if (evt.type === "stage") {
-          if (!streaming) { stageMsg = evt.label; paint(); }
-        } else if (evt.type === "token") {
-          if (!streaming) {                       // first token: drop the loader, start the answer
-            streaming = true;
-            wait.className = "msg bot";
-            wait.innerHTML = '<span class="stream"></span>';
-          }
-          answerText += evt.text;
-          const sp = wait.querySelector(".stream");
-          if (sp) sp.textContent = answerText;    // textContent = safe + preserves newlines
-        } else if (evt.type === "done") {
-          finished = true; renderDone(evt);       // replace streamed text with rendered markdown + citations
-        } else if (evt.type === "error") {
-          finished = true;
-          wait.className = "msg bot";
-          wait.innerHTML = `<span class="chip error">error</span> ${esc(evt.detail)}`;
-        }
+        if (evt.type === "stage") view.stage(evt.label);
+        else if (evt.type === "token") view.token(evt.text);
+        else if (evt.type === "done") { finished = true; view.stop(); renderDone(view, evt); }
+        else if (evt.type === "error") { finished = true; view.stop(); renderError(view, evt.detail); }
       }
-      chat.scrollTop = chat.scrollHeight;
+      scrollDown();
     }
-    if (!finished) {
-      wait.className = "msg bot";
-      wait.innerHTML = `<span class="chip error">error</span> the response stream ended unexpectedly.`;
-    }
+    if (!finished) renderError(view, "The answer stopped arriving before it was complete. Please try again.");
   } catch (err) {
-    wait.className = "msg bot";
-    wait.innerHTML = `<span class="chip error">error</span> ${esc(err.message)}`;
+    renderError(view, err.message);
   } finally {
-    clearInterval(timer);
-    busy = false;
-    applyLimitState();
+    view.stop();
+    busy = false; applyComposerState();
     if (!input.disabled) input.focus();
-    chat.scrollTop = chat.scrollHeight;
+    scrollDown();
   }
+}
+
+form.addEventListener("submit", e => { e.preventDefault(); ask(); });
+input.addEventListener("input", () => { autoresize(); applyComposerState(); });
+input.addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); ask(); }
+});
+attachBtn.addEventListener("click", () => fileInput.click());
+fileInput.addEventListener("change", () => uploadFile(fileInput.files[0]));
+
+// citations scroll to and highlight their source
+messages.addEventListener("click", e => {
+  const toggle = e.target.closest(".adv-toggle");
+  if (toggle) {
+    const panel = document.getElementById(toggle.getAttribute("aria-controls"));
+    const open = toggle.getAttribute("aria-expanded") !== "true";
+    toggle.setAttribute("aria-expanded", String(open));
+    toggle.lastChild.textContent = open ? "Hide advanced details" : "See advanced details";
+    panel.hidden = !open;
+    return;
+  }
+  const a = e.target.closest("a.cite");
+  if (!a) return;
+  e.preventDefault();
+  const src = document.getElementById(a.dataset.target);
+  if (!src) return;
+  src.scrollIntoView({ behavior: "smooth", block: "center" });
+  src.classList.add("flash");
+  setTimeout(() => src.classList.remove("flash"), 1400);
 });
 
-fileInput.addEventListener("change", async () => {
-  const f = fileInput.files[0];
-  if (!f) return;
-  srcStatus.textContent = `Uploading & indexing "${f.name}"… (local, ~10-30s)`;
-  const fd = new FormData();
-  fd.append("file", f);
-  try {
-    const res = await fetch("/api/upload", { method: "POST", body: fd });
-    const body = await res.text();
-    let data = null;
-    try {
-      data = body ? JSON.parse(body) : null;
-    } catch {
-      // A proxy or unexpected server failure may return plain text/HTML.
-    }
-    if (!res.ok) {
-      if (res.status === 401) signedOut("Your session has ended. Please sign in again.");
-      throw new Error(data?.detail || body || `Upload failed (${res.status}).`);
-    }
-    if (!data) throw new Error("Upload succeeded but returned an invalid response.");
-    sessionId = data.session_id;
-    srcStatus.innerHTML = `&#128196; Answering from <strong>${esc(data.filename)}</strong> — ${data.chunks} chunks${data.pages ? `, ${data.pages} pages` : ""}.`;
-    add("bot", `Indexed <strong>${esc(data.filename)}</strong>. Ask me anything about it.`);
-  } catch (err) {
-    srcStatus.textContent = "Upload failed: " + esc(err.message);
-    add("bot", `<span class="chip error">upload error</span> ${esc(err.message)}`);
-  } finally {
-    fileInput.value = "";
-  }
+// ── drag and drop ────────────────────────────────────────────────────────────
+let dragDepth = 0;
+const dropEl = $("#drop");
+const canDrop = e => me?.authenticated && !busy && !uploading && [...(e.dataTransfer?.types || [])].includes("Files");
+window.addEventListener("dragenter", e => { if (!canDrop(e)) return; e.preventDefault(); dragDepth++; dropEl.hidden = false; });
+window.addEventListener("dragover", e => { if (canDrop(e)) e.preventDefault(); });
+window.addEventListener("dragleave", e => { if (!canDrop(e)) return; if (--dragDepth <= 0) { dragDepth = 0; dropEl.hidden = true; } });
+window.addEventListener("drop", e => {
+  if (!canDrop(e)) return;
+  e.preventDefault(); dragDepth = 0; dropEl.hidden = true;
+  const f = e.dataTransfer.files[0];
+  if (f) uploadFile(f);
 });
+
+// ── account menu ─────────────────────────────────────────────────────────────
+const menu = $("#menu"), avatarBtn = $("#avatarBtn");
+function setMenu(open) { menu.hidden = !open; avatarBtn.setAttribute("aria-expanded", String(open)); }
+avatarBtn.addEventListener("click", e => { e.stopPropagation(); setMenu(menu.hidden); });
+document.addEventListener("click", e => { if (!menu.hidden && !menu.contains(e.target)) setMenu(false); });
+$("#signout").addEventListener("click", async () => {
+  try { await fetch("/auth/logout", { method: "POST" }); } finally { location.reload(); }
+});
+$("#menuBilling").addEventListener("click", () => { setMenu(false); openModal("plans"); });
+$("#meter").addEventListener("click", () => { if (usage && usage.plan !== "pro") openModal("plans"); });
+
+// ── upgrade and checkout (display only: no payment is taken) ────────────────
+const modal = $("#modal");
+let lastFocus = null;
+function openModal(view) {
+  lastFocus = document.activeElement;
+  setMenu(false);
+  $("#viewPlans").hidden = view !== "plans";
+  $("#viewCheckout").hidden = view !== "checkout";
+  $("#payNote").hidden = true;
+  modal.hidden = false;
+  const first = modal.querySelector(view === "plans" ? "#toCheckout" : "#payBtn");
+  (first && !first.disabled ? first : modal.querySelector(".modal-x")).focus();
+}
+function closeModal() { modal.hidden = true; if (lastFocus) lastFocus.focus(); }
+document.addEventListener("click", e => { if (e.target.closest("[data-upgrade]")) { e.preventDefault(); openModal("plans"); } });
+modal.addEventListener("click", e => { if (e.target.closest("[data-close]")) closeModal(); });
+document.addEventListener("keydown", e => {
+  if (e.key !== "Escape") return;
+  if (!modal.hidden) closeModal();
+  else if (!menu.hidden) { setMenu(false); avatarBtn.focus(); }
+});
+$("#toCheckout").addEventListener("click", () => openModal("checkout"));
+$("#backToPlans").addEventListener("click", () => openModal("plans"));
+document.querySelectorAll(".method").forEach(m => m.addEventListener("click", () => {
+  document.querySelectorAll(".method").forEach(x => x.setAttribute("aria-checked", String(x === m)));
+}));
+$("#payBtn").addEventListener("click", () => { $("#payNote").hidden = false; });
 
 loadMe();
 </script>

@@ -1,0 +1,81 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>ACSH-RAG Evaluation</title>
+<style>
+:root{--bg:#031716;--s:#032F30;--b:rgba(107,163,190,.18);--t:#E6F2F2;--t2:#A8C7CE;--t3:#7298A3;--a:#0C969C;--ok:#5CC9A7;--bad:#E8907F;--warn:#E3C46E}
+*{box-sizing:border-box;margin:0;padding:0}body{background:var(--bg);color:var(--t);font:14.5px/1.55 "Segoe UI",system-ui,sans-serif;padding:32px 24px}
+main{max-width:1180px;margin:0 auto}h1{font-size:26px;letter-spacing:-.01em}h2{font-size:17px;margin:34px 0 12px}
+.muted{color:var(--t3)}.meta{color:var(--t2);margin-top:4px}
+.banner{margin-top:18px;padding:14px 18px;border-radius:12px;border:1px solid;font-weight:600}
+.banner.ok{border-color:rgba(92,201,167,.4);background:rgba(92,201,167,.08);color:var(--ok)}
+.banner.bad{border-color:rgba(232,144,127,.4);background:rgba(232,144,127,.08);color:var(--bad)}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin-top:20px}
+.card{background:var(--s);border:1px solid var(--b);border-radius:14px;padding:16px}
+.c-top{display:flex;justify-content:space-between;color:var(--t2);font-size:13px}.c-top b{font-size:11px;letter-spacing:.06em}
+.card.ok .c-top b{color:var(--ok)}.card.bad .c-top b{color:var(--bad)}.card.na .c-top b{color:var(--t3)}
+.c-val{font-size:30px;font-weight:700;margin:4px 0 8px}
+.c-bar{position:relative;height:7px;border-radius:9px;background:rgba(107,163,190,.18)}
+.c-bar s{position:absolute;inset:0 auto 0 0;border-radius:9px;background:var(--a)}.card.bad .c-bar s{background:var(--bad)}
+.c-bar i{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--t)}
+.c-sub{color:var(--t3);font-size:12.5px;margin-top:8px}
+.scroll{overflow-x:auto}table{width:100%;border-collapse:collapse;background:var(--s);border:1px solid var(--b);border-radius:12px}
+th,td{padding:9px 12px;border-bottom:1px solid var(--b);text-align:left;vertical-align:top}th{color:var(--t3);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+td.num{font-variant-numeric:tabular-nums;white-space:nowrap}td.ok{color:var(--ok)}td.bad{color:var(--bad)}
+td.q{min-width:320px}summary{cursor:pointer}.ans,.ref{color:var(--t2);font-size:13px;margin-top:8px;white-space:pre-wrap}
+svg{width:100%;min-width:560px;height:auto}.g{stroke:rgba(107,163,190,.16)}.t{fill:var(--t3);font-size:11px}
+.legend{display:flex;flex-wrap:wrap;gap:16px;color:var(--t2);font-size:13px;margin-top:6px}.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
+</style></head><body><main>
+<h1>ACSH-RAG evaluation</h1>
+<div class="meta">2026-10-27 17:06:50 · full · 6 questions
+· judge gemini-3.1-flash-lite · question set 5cf8d832d7</div>
+<div class="banner bad">Failed · 2 question(s) errored</div>
+<div class="cards"><div class="card ok"><div class="c-top"><span>Retrieval hit rate</span>
+          <b>PASS</b></div>
+          <div class="c-val">100%</div><div class="c-bar"><s style="width:100%"></s><i style="left:80%" title="threshold"></i></div>
+          <div class="c-sub">Passage with the answer reached the answer step · threshold 80%</div></div><div class="card ok"><div class="c-top"><span>Answer rate</span>
+          <b>PASS</b></div>
+          <div class="c-val">100%</div><div class="c-bar"><s style="width:100%"></s><i style="left:85%" title="threshold"></i></div>
+          <div class="c-sub">Answerable questions that were answered · threshold 85%</div></div><div class="card na"><div class="c-top"><span>Refusal accuracy</span>
+          <b>n/a</b></div>
+          <div class="c-val">—</div><div class="c-bar"><s style="width:0%"></s><i style="left:75%" title="threshold"></i></div>
+          <div class="c-sub">Unanswerable questions correctly refused · threshold 75%</div></div><div class="card ok"><div class="c-top"><span>Faithfulness</span>
+          <b>PASS</b></div>
+          <div class="c-val">100%</div><div class="c-bar"><s style="width:100%"></s><i style="left:70%" title="threshold"></i></div>
+          <div class="c-sub">Claims supported by the passages used · threshold 70%</div></div><div class="card ok"><div class="c-top"><span>Answer relevancy</span>
+          <b>PASS</b></div>
+          <div class="c-val">82%</div><div class="c-bar"><s style="width:82%"></s><i style="left:70%" title="threshold"></i></div>
+          <div class="c-sub">Answer addresses the question · threshold 70%</div></div><div class="card ok"><div class="c-top"><span>Context recall</span>
+          <b>PASS</b></div>
+          <div class="c-val">100%</div><div class="c-bar"><s style="width:100%"></s><i style="left:65%" title="threshold"></i></div>
+          <div class="c-sub">Passages contain the reference facts · threshold 65%</div></div><div class="card ok"><div class="c-top"><span>Factual correctness</span>
+          <b>PASS</b></div>
+          <div class="c-val">92%</div><div class="c-bar"><s style="width:92%"></s><i style="left:60%" title="threshold"></i></div>
+          <div class="c-sub">Reference facts stated correctly · threshold 60%</div></div></div>
+<h2>Born-digital vs scanned documents</h2><div class="scroll"><table><tr><th>Document type</th><th>Retrieval hit rate</th><th>Answer rate</th><th>Faithfulness</th><th>Answer relevancy</th><th>Context recall</th><th>Factual correctness</th></tr><tr><td><b>Born-digital</b></td><td>100%</td><td>100%</td><td>100%</td><td>82%</td><td>100%</td><td>92%</td></tr></table></div>
+<h2>Trend (2 runs on this question set)</h2><div class="scroll"><svg viewBox="0 0 760 220" role="img" aria-label="Metric trend across runs"><line x1="34" x2="726" y1="186.0" y2="186.0" class="g"/><text x="28" y="190.0" class="t" text-anchor="end">0</text><line x1="34" x2="726" y1="148.0" y2="148.0" class="g"/><text x="28" y="152.0" class="t" text-anchor="end">25</text><line x1="34" x2="726" y1="110.0" y2="110.0" class="g"/><text x="28" y="114.0" class="t" text-anchor="end">50</text><line x1="34" x2="726" y1="72.0" y2="72.0" class="g"/><text x="28" y="76.0" class="t" text-anchor="end">75</text><line x1="34" x2="726" y1="34.0" y2="34.0" class="g"/><text x="28" y="38.0" class="t" text-anchor="end">100</text><polyline fill="none" stroke="#0C969C" stroke-width="2.5" points="34.0,60.4 726.0,34.0"/><circle cx="34.0" cy="60.4" r="3.5" fill="#0C969C"/><circle cx="726.0" cy="34.0" r="3.5" fill="#0C969C"/><polyline fill="none" stroke="#6BA3BE" stroke-width="2.5" points="726.0,34.0"/><circle cx="726.0" cy="34.0" r="3.5" fill="#6BA3BE"/><polyline fill="none" stroke="#E3C46E" stroke-width="2.5" points="726.0,46.5"/><circle cx="726.0" cy="46.5" r="3.5" fill="#E3C46E"/><polyline fill="none" stroke="#5CC9A7" stroke-width="2.5" points="726.0,34.0"/><circle cx="726.0" cy="34.0" r="3.5" fill="#5CC9A7"/><text x="34.0" y="210" class="t" text-anchor="middle">10-27 15:24</text><text x="726.0" y="210" class="t" text-anchor="middle">10-27 17:06</text></svg></div><div class="legend"><span><i style="background:#0C969C"></i>Retrieval hit rate</span><span><i style="background:#6BA3BE"></i>Faithfulness</span><span><i style="background:#E3C46E"></i>Factual correctness</span><span><i style="background:#5CC9A7"></i>Answer rate</span></div>
+<h2>Questions</h2><p class="muted" style="margin-bottom:10px">Click a question to see the answer and the reference.</p><div class="scroll"><table class="qs"><tr><th>ID</th><th>Type</th><th>Question</th><th>Outcome</th><th>Hit</th><th>Faithfulness</th><th>Answer relevancy</th><th>Context recall</th><th>Factual correctness</th><th>Time</th></tr><tr><td>t01</td><td>text</td>
+          <td class="q"><details><summary>What does AIGNN stand for and which classical algorithm is it trained to emulate?</summary><div class="ans">AIGNN stands for algorithm-informed graph neural network [C1]. It is trained to emulate the Ford-Fulkerson algorithm [C1].</div>
+          <div class="ref"><b>Reference:</b> AIGNN stands for algorithm-informed graph neural network. It is trained to emulate the Ford-Fulkerson algorithm, which solves max-flow problems.</div></details></td>
+          <td class="ok">answered · simple</td><td class="ok num">✓</td><td class="num">1.00</td><td class="num">0.88</td><td class="num">1.00</td><td class="num">0.67</td><td class="num">26.3s</td></tr><tr><td>t02</td><td>text</td>
+          <td class="q"><details><summary>Why do the authors use max-flow information to infer pressures in water distribution networks?</summary><div class="ans">The authors use max-flow information because water distribution networks (WDNs) function as flow networks [C1], [C10]. Incorporating max-flow information helps in accurately inferring pressures within the network [C11], [C10], as the flow properties of a water network are highly informative for this task [C32].</div>
+          <div class="ref"><b>Reference:</b> Because water distribution networks function as flow networks, so incorporating max-flow information is beneficial for inferring pressures.</div></details></td>
+          <td class="ok">answered · simple</td><td class="ok num">✓</td><td class="num">1.00</td><td class="num">0.93</td><td class="num">1.00</td><td class="num">1.00</td><td class="num">10.4s</td></tr><tr><td>t03</td><td>text</td>
+          <td class="q"><details><summary>What limitation of data-driven leakage detection methods does the paper set out to address?</summary><div class="ans">The paper sets out to address the limitation that data-driven methods often learn shortcuts that work well with in-distribution data but fail to generalize to out-of-distribution data [C0], [C1].</div>
+          <div class="ref"><b>Reference:</b> Data-driven methods often learn shortcuts that work well on in-distribution data but fail to generalize to out-of-distribution data.</div></details></td>
+          <td class="ok">answered · simple</td><td class="ok num">✓</td><td class="num">1.00</td><td class="num">0.65</td><td class="num">1.00</td><td class="num">1.00</td><td class="num">19.6s</td></tr><tr><td>t04</td><td>text</td>
+          <td class="q"><details><summary>How are leakages detected and localized using the reconstructor and the predictor?</summary><div class="ans">Leakages are detected and localized by analyzing the discrepancies or residuals between the outputs of the reconstructor and the predictor [C1], [C50], [C30]. 
+
+Specifically, the process works as follows:
+1. The reconstructor estimates the actual nodal pressures using current measurements (time step $t$), while the predictor predicts the leak-free nodal pressures using previous measurements (time steps $t-T, \dots, t-1$) [C30], [C47].
+2. The residual pressure is calculated by comparing the outputs of these two networks [C30].
+3. Because leakages occur at edges while residual signals are on nodes, the absolute edge residual is computed as $r_{uv}^{(E)}(t) = |r_v(t) - r_u(t)|$ [C47].
+4. The moving average of this edge residual over a window size $s$ is calculated [C47]. Since normal residual signals are mainly caused by random noise and exhibit stationary behavior, deviations of the residual signals from this stationary behavior imply abnormal system behavior (leakages) [C47]. 
+5. Data from a prior period (e.g., 2018) is used to determine a threshold $\xi$ for residual analysis to evaluate performance and locate leakages [C50].</div>
+          <div class="ref"><b>Reference:</b> A reconstructor estimates the actual pressures from current measurements and a predictor estimates leak-free pressures from previous measurements. Leakages are detected and localized by analyzing the discrepancies (residuals) between the two outputs.</div></details></td>
+          <td class="ok">answered · complex</td><td class="ok num">✓</td><td class="num">—</td><td class="num">0.81</td><td class="num">—</td><td class="num">1.00</td><td class="num">57.8s</td></tr><tr><td>t05</td><td>text</td>
+          <td class="q"><details><summary>What was the estimated worldwide annual financial impact of water loss in 2016?</summary><div class="ans">Max retries exceeded in CitationEnforcer.</div>
+          <div class="ref"><b>Reference:</b> Around USD 39 billion.</div></details></td>
+          <td class="bad">error</td><td class=" num"></td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">124.8s</td></tr><tr><td>t06</td><td>text</td>
+          <td class="q"><details><summary>Which algorithm is used to find augmenting paths in the Ford-Fulkerson implementation and why?</summary><div class="ans">Max retries exceeded in CitationEnforcer.</div>
+          <div class="ref"><b>Reference:</b> The Bellman-Ford shortest-path algorithm, because breadth-first or depth-first search can produce multiple valid paths, which makes supervision difficult, and GNNs are known to align well with Bellman-Ford.</div></details></td>
+          <td class="bad">error</td><td class=" num"></td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">213.9s</td></tr></table></div>
+</main></body></html>

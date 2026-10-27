@@ -1,0 +1,1139 @@
+{
+  "timestamp": "2026-10-27T15:20:02",
+  "mode": "retrieval-only",
+  "dataset_id": "1b4aa19802",
+  "judge_model": null,
+  "questions_run": 27,
+  "errors": 0,
+  "metrics": {
+    "retrieval_hit_rate": 1.0
+  },
+  "groups": {
+    "text": {
+      "retrieval_hit_rate": 1.0
+    },
+    "scanned": {
+      "retrieval_hit_rate": 1.0
+    }
+  },
+  "thresholds": {
+    "retrieval_hit_rate": 0.8,
+    "answer_rate": 0.85,
+    "refusal_accuracy": 0.75,
+    "faithfulness": 0.7,
+    "answer_relevancy": 0.7,
+    "context_recall": 0.65,
+    "factual_correctness": 0.6
+  },
+  "failed_metrics": [],
+  "passed": true,
+  "questions": [
+    {
+      "id": "t01",
+      "type": "text",
+      "source": "gnn_leak_detection.pdf",
+      "pages": "1;4",
+      "question": "What does AIGNN stand for and which classical algorithm is it trained to emulate?",
+      "reference": "AIGNN stands for algorithm-informed graph neural network. It is trained to emulate the Ford-Fulkerson algorithm, which solves max-flow problems.",
+      "answer": "",
+      "refused": null,
+      "route": "",
+      "confidence": "",
+      "contexts": [
+        {
+          "text": "a\nlongstanding and significantly challenging issue (Harris and Ross, 1955). Furthermore, classical algorithms often become impractical when dealing with partially observable data. Thus, despite their theoretical correctness, the outputs\nof classical algorithms are approximations, because the abstract space representation may not precisely describe the real-world problem of interest.\nInstead of man",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 6
+        },
+        {
+          "text": "predict the flow matrix and accurately recover all the intermediate steps of the\nalgorithm.\nAfter training the NAR model with Ford-Fulkerson algorithm instances, its\nprocessor inherits the algorithmic reasoning abilities. We then adapt the pro-cessor to address the task of pressure reconstruction and prediction in WDNs.\nSpecifically, we replace the linear encoder and decoder of the NAR model with\n",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 17
+        },
+        {
+          "text": "-world shortest-path finding problems are often too complex to be\naccurately represented by simple scalar values.\nTo leverage the strengths of\nboth deep learning models and classical algorithms, recent advancements in\nneural algorithmic reasoning (NAR) aim to construct neural networks capable of approximating and executing classical algorithms (Veličković and Blundell, 2021; Veličković et al., 202",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 3
+        },
+        {
+          "text": "even during inference time.\nBeyond\npressure estimation, GNNs have also demonstrated strong performance in other\nstate estimation tasks in WDNs, such as demand prediction (Zanfei et al., 2022)\nand water quality prediction (Li et al., 2024).\n2.2. Neural Algorithmic Reasoning\nNAR is an emerging research area focused on developing neural networks\nthat can perform algorithmic computations within a high",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 6
+        },
+        {
+          "text": "for the task. Further\nfine-tuning of the processor with real-world data does not lead to performance improvement.\n•AIGNN FTwhere the processor is fine-tuned, does not perform as well as\nAIGNN. This suggests that the pre-trained algorithmic knowledge is more\nbeneficial when left unchanged.\n•AIGNN POS, which includes additional positional features, does not show\nsignificant improvement for the press",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 18
+        }
+      ],
+      "retrieval_hit": true,
+      "seconds": 7.6
+    },
+    {
+      "id": "t02",
+      "type": "text",
+      "source": "gnn_leak_detection.pdf",
+      "pages": "1;4",
+      "question": "Why do the authors use max-flow information to infer pressures in water distribution networks?",
+      "reference": "Because water distribution networks function as flow networks, so incorporating max-flow information is beneficial for inferring pressures.",
+      "answer": "",
+      "refused": null,
+      "route": "",
+      "confidence": "",
+      "contexts": [
+        {
+          "text": "the output of\nthe reconstructor significantly deviates from the output of the predictor, it is\nindicative of a potential leak.\nInstead of directly training the model to learn the input-output mappings,\nwe propose to enhance the model with algorithmic knowledge. The flow properties of a water network are highly informative for inferring pressures, and the\nability to simulate the algorithm for max-f",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 11
+        },
+        {
+          "text": "networks, incorporating max-flow information helps in accurately inferring pressures within the network. We propose a method to transfer the knowledge of\nthe Ford-Fulkerson algorithm, which solves max-flow problems, to GNN models\nfor pressure inference in WDNs. Consequently, we name our model algorithminformed GNN (AIGNN). Following the paradigm outlined in (Garðarsson et al.,\n2022), we employ a p",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 4
+        },
+        {
+          "text": "ovic, P., Cucurull, G., Casanova, A., Romero, A., Lio, P., Bengio, Y.: Graph attention networks.\narXiv preprint arXiv:1710.10903 (2017)\n37.Vrachimis,S.G.,Kyriakou, M.S.,et al.:Leakdb: a benchmark dataset for leakage diagnosis in water\ndistribution networks:(146).In:WDSA/CCWI Joint ConferenceProceedings.vol.1(2018)\n38.Wu,Z.Y.,Sage,P.,Turtle,D.:Pressure-dependent leak detection model and its applica",
+          "filename": "fuzzy_gnn_scanned.pdf",
+          "page": 12
+        },
+        {
+          "text": "-of-distribution data. To address this limitation and\ninspired by the perfect generalization ability of classical algorithms, we propose\nan algorithm-informed graph neural network (AIGNN) for leakage detection\nand localization in WDNs. Recognizing that WDNs function as flow networks,\nincorporating max-flow information can be beneficial for inferring pressures. In\nthe proposed framework, we first t",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 1
+        },
+        {
+          "text": "of the Ford-\nFulkerson algorithm (Ford and Fulkerson, 1956). We collect the edge capacities\nin a capacity matrix C and we construct a flow matrix F to represent the flow\ninformation of the entire network when the max-flow is achieved. The Ford-\nFulkerson algorithm has two key subroutines:\n1. Finding a valid path P = {vs, . . . , vt} from the source node vs to the sink\nnode vt.\n2. Augmenting the re",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 11
+        }
+      ],
+      "retrieval_hit": true,
+      "seconds": 0.3
+    },
+    {
+      "id": "t03",
+      "type": "text",
+      "source": "gnn_leak_detection.pdf",
+      "pages": "1;3",
+      "question": "What limitation of data-driven leakage detection methods does the paper set out to address?",
+      "reference": "Data-driven methods often learn shortcuts that work well on in-distribution data but fail to generalize to out-of-distribution data.",
+      "answer": "",
+      "refused": null,
+      "route": "",
+      "confidence": "",
+      "contexts": [
+        {
+          "text": "due to its low ξ value, which also resulted in numerous false alarms. The results\nhighlight the importance of combining both algorithmic and non-algorithmic\nknowledge for effective leakage detection.\n20\nTable 5: Leakage detection performance comparison.\nξ\nDeteced leakages (2018)\nDetected leakages (2019)\nChebNet\n1.2\n12/14\n15/23\nAIGNN\n0.25\n12/14\n22/23\nChebNetIN\n1.4\n12/14\n17/23\nChebNetEMB\n1.6\n12/14\n1",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 20
+        },
+        {
+          "text": "3). Previous approaches\nhave employed various techniques such as support vector machines (Mounce\net al., 2011), evolutionary polynomial regression (Laucelli et al., 2016), and\n2\nconvolutional neural networks (Fang et al., 2019).\nIn practice, it is too expensive to monitor every junction in a WDN, resulting in limited sensor coverage. Given that WDNs are inherently represented as\ngraphs with juncti",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 2
+        },
+        {
+          "text": "hints for the next algorithmic step, or the final\noutput of the algorithm if it is at the final algorithmic step.\nTo train the described NAR model, the loss is calculated based on the decoded hints at every step and the final output. The hint supervision constrains\nthe network to behave more closely to the target algorithm at each intermediate step k. This ensures that the NAR model emulates the a",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 9
+        },
+        {
+          "text": "health.Leakages in these systems lead to significant water loss,economic burdens,\nenvironmental impacts,and operational inefficiencies[23].Globally,WDNs lose 32 billion cubic\nmeters of treated water annually [22], while in developing countries losses could meet the annual\nwater needs of 200million people[35]. The financial costs of repairs and replacements amount to\nmillions of dollars each year. ",
+          "filename": "fuzzy_gnn_scanned.pdf",
+          "page": 1
+        },
+        {
+          "text": "competition provides two years of data from 2018 and 2019. Data from 2018\nwill be used to determine the threshold ξ for residual analysis, while data from\n2019 will be employed to evaluate the model’s performance in leakage detection\nand localization.\nWe compare our method with the state-of-the-art GNN model for leakage\ndetection and localization, specifically the ChebNet model proposed by Garðars",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 16
+        }
+      ],
+      "retrieval_hit": true,
+      "seconds": 0.1
+    },
+    {
+      "id": "t04",
+      "type": "text",
+      "source": "gnn_leak_detection.pdf",
+      "pages": "1;10",
+      "question": "How are leakages detected and localized using the reconstructor and the predictor?",
+      "reference": "A reconstructor estimates the actual pressures from current measurements and a predictor estimates leak-free pressures from previous measurements. Leakages are detected and localized by analyzing the discrepancies (residuals) between the two outputs.",
+      "answer": "",
+      "refused": null,
+      "route": "",
+      "confidence": "",
+      "contexts": [
+        {
+          "text": "availability of pressure data, an intuitive strategy involves first\nestimating both the actual pressure and the leak-free pressure of the complete\nWDN, and then identifying leakages by analyzing the differences between these\nestimated signals (Soldevila et al., 2020; Romero-Ben et al., 2022; Garðarsson\net al., 2022). Specifically, we adopt the two-stage scheme used in (Garðarsson\net al., 2022). In",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 10
+        },
+        {
+          "text": "competition provides two years of data from 2018 and 2019. Data from 2018\nwill be used to determine the threshold ξ for residual analysis, while data from\n2019 will be employed to evaluate the model’s performance in leakage detection\nand localization.\nWe compare our method with the state-of-the-art GNN model for leakage\ndetection and localization, specifically the ChebNet model proposed by Garðars",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 16
+        },
+        {
+          "text": "of the approach is depicted in Figure 2. In the following\nsections, we will detail each component of the model.\n4.1. First Stage: Algorithm-Informed Reconstructor and Predictor\nIn the first stage, two AIGNNs are trained:\n(i) Reconstructor:\nThis\nAIGNN takes XG(t) as the input and outputs the complete actual pressure\nsignal ˆyr(t); (ii) Predictor: This AIGNN takes the set of previous sparse\ngraph pr",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 10
+        },
+        {
+          "text": "propose two variants that integrate the embeddings generated by AIGNN\nwith other models. This allows the resulting models to benefit from max-flow\ninformation without losing other useful information. Specifically, we use the\nembedding before the last layer of AIGNN as the augmenting embedding. This\nembedding is then fed into the ChebNet model (Garðarsson et al., 2022) in two\nways: as additional in",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 15
+        },
+        {
+          "text": "the reconstructor is trained with\ndata from time step t and the predictor is trained with data from time step\nt −T, . . . , t −1. Since leakages occur at edges, while the residual signals are\ndefined on nodes, we further compute the absolute edge residual as r(E)\nuv (t) =\n|rv(t) −ru(t)|. Under normal conditions, the residual signals should mainly be\ncaused by the random noise and have stationary b",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 15
+        }
+      ],
+      "retrieval_hit": true,
+      "seconds": 0.1
+    },
+    {
+      "id": "t05",
+      "type": "text",
+      "source": "gnn_leak_detection.pdf",
+      "pages": "2",
+      "question": "What was the estimated worldwide annual financial impact of water loss in 2016?",
+      "reference": "Around USD 39 billion.",
+      "answer": "",
+      "refused": null,
+      "route": "",
+      "confidence": "",
+      "contexts": [
+        {
+          "text": "material fatigue\ncan lead to the development of leaks.\nConsequently, water systems around\nthe world experience significant water loss, necessitating continuous monitoring, maintenance, and repair efforts to mitigate the impact and conserve as\nmuch water as possible (Puust et al., 2010). The issue of water loss presents\na substantial economic burden, with the estimated worldwide annual financial\nim",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 2
+        },
+        {
+          "text": "superior performance and\ndevelopedafuzzy-enhancedvariantthatoffersintuitiveexplanationsforclassifiedleaklocations. Our fuzzy graph neural network (FGENConv)achieved Graph F1 scores of 0.889\nfor detection and 0.814 for localization—slightlybelowthe crisp GENConv's 0.938 and\n0.858,respectively—yet it compensates by providing spatially localized,fuzzy rule-based\nexplanations.By striking the right bal",
+          "filename": "fuzzy_gnn_scanned.pdf",
+          "page": 1
+        },
+        {
+          "text": "task-relevant and generalizable features. To the best of our knowledge,\nthis is the first work that applies algorithmic reasoning to engineering applications. Experimental results demonstrate that the proposed algorithm-informed\napproach achieves superior results with better generalization ability compared\nto GNNs that do not incorporate algorithmic knowledge.\nKeywords:\nGraph neural networks, neur",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 1
+        },
+        {
+          "text": "health.Leakages in these systems lead to significant water loss,economic burdens,\nenvironmental impacts,and operational inefficiencies[23].Globally,WDNs lose 32 billion cubic\nmeters of treated water annually [22], while in developing countries losses could meet the annual\nwater needs of 200million people[35]. The financial costs of repairs and replacements amount to\nmillions of dollars each year. ",
+          "filename": "fuzzy_gnn_scanned.pdf",
+          "page": 1
+        },
+        {
+          "text": "pipe networks. Urban Water Journal 7, 25–45.\nRodionov, G., Prokhorenkova, L., 2024. Discrete neural algorithmic reasoning.\narXiv preprint arXiv:2402.11628 .\nRomero-Ben, L., Alves, D., Blesa, J., Cembrano, G., Puig, V., Duviella, E.,\n2022. Leak localization in water distribution networks using data-driven and\nmodel-based approaches. Journal of Water Resources Planning and Management 148, 04022016.\n",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 24
+        }
+      ],
+      "retrieval_hit": true,
+      "seconds": 0.1
+    },
+    {
+      "id": "t06",
+      "type": "text",
+      "source": "gnn_leak_detection.pdf",
+      "pages": "11",
+      "question": "Which algorithm is used to find augmenting paths in the Ford-Fulkerson implementation and why?",
+      "reference": "The Bellman-Ford shortest-path algorithm, because breadth-first or depth-first search can produce multiple valid paths, which makes supervision difficult, and GNNs are known to align well with Bellman-Ford.",
+      "answer": "",
+      "refused": null,
+      "route": "",
+      "confidence": "",
+      "contexts": [
+        {
+          "text": "for the reconstructor and predictor, we first discuss how to infuse the algorithmic knowledge into a NAR model.\n11\nAlgorithm 1 The Ford-Fulkerson Algorithm\nInput: G = (V, E), C, vs, vt.\nfuv = 0 : ∀(u, v) ∈E\nwhile ∃augmenting path P = {vs, . . . , vt} in G do :\ncp = min{cuv : (u, v) ∈P} ;\nfor each (u, v) ∈P do:\nfuv = fuv −cp;\nfvu = fvu + cp;\ncuv = cuv −cp;\ncvu = cvu + cp;\nend for\nend while\nOutput: ",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 11
+        },
+        {
+          "text": "is outlined in Algorithm 1.\nIn the Ford-Fulkerson algorithm, the augmenting path can be obtained by\nvarious methods, such as breadth-first search and depth-first search. However,\nsince our goal is to train an NAR model to execute the algorithm, providing\nproper supervision based on these methods is challenging due to the potential\nexistence of multiple valid paths for both breadth-first search and",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 11
+        },
+        {
+          "text": "of the Ford-\nFulkerson algorithm (Ford and Fulkerson, 1956). We collect the edge capacities\nin a capacity matrix C and we construct a flow matrix F to represent the flow\ninformation of the entire network when the max-flow is achieved. The Ford-\nFulkerson algorithm has two key subroutines:\n1. Finding a valid path P = {vs, . . . , vt} from the source node vs to the sink\nnode vt.\n2. Augmenting the re",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 11
+        },
+        {
+          "text": "to [S1, S2, S3] = [240, 120, 20], and the\nfilter sizes are [F1, F2, F3] = [120, 60, 30].\n5.2. Training the AIGNN model\nTo train the AIGNN model, we first pre-train a NAR model to execute the\nFord-Fulkerson algorithm for solving max-flow problems. This involves generating the algorithm trajectories of the Ford-Fulkerson algorithm for max-flow\nproblems. Each problem instance contains a graph sampled",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 16
+        },
+        {
+          "text": "ux et al., 2021; Ibarz et al.,\n2022; Montgomery et al., 2024). Motivated by their findings, we propose using\na single PGN to perform both subroutines of the Ford-Fulkerson algorithm. To\ninform the processor of which subroutine to execute, we include an additional\nbinary feature. Specifically, at each step, the PGN model is applied twice: first\nto compute the augmenting path P, and then to update t",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 14
+        }
+      ],
+      "retrieval_hit": true,
+      "seconds": 0.1
+    },
+    {
+      "id": "t07",
+      "type": "text",
+      "source": "gnn_leak_detection.pdf",
+      "pages": "13",
+      "question": "Which processor architecture does the neural algorithmic reasoning model use and what aggregation function does it use?",
+      "reference": "A pointer graph network (PGN) processor with element-wise max aggregation.",
+      "answer": "",
+      "refused": null,
+      "route": "",
+      "confidence": "",
+      "contexts": [
+        {
+          "text": "e, the message transformation function Θmsg, the\nskip connection layer Θskip and the output layer Θout. Specifically, the message transformation function is defined as a two-layer MLP, while the other five\nlayers are all defined as linear layers. The update of node v at the k-th step is\ndefined as follows:\nhk+1\nv\n= σ\n\nΘskip(hk\nv)\n+ Θout\n M\nu∈N(v)\nΘmsg\n\u0000Θs(hk\nv) + Θt(hk\nu) + Θe(hk\neuv)\n\u0001\n!!\n,\n(1)\nw",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 13
+        },
+        {
+          "text": "to learn to reason like algorithms. Motivated by theoretical findings\nthat GNNs align well with classical algorithms (Xu et al., 2020, 2021; Dudzik and\nVeličković, 2022), existing NAR models normally employ GNNs as processors.\n8\nFigure 1: The architecture of the algorithm-informed reconstructor and predictor.\nThus, we denote the processor by pGNN(·). Depending on the computational\ndynamics of the ",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 8
+        },
+        {
+          "text": ") aims to generalize message passing mechanisms and\nsupports various aggregation functions like Softmax or PowerMean, as proposed in the DeepGCN\npaper [38].\nh(+1) = MLP (h(1) + AGG (ReLU(h() + eji) + e : j ∈ N(i)\n(4)\nwhere MLP is a Multi-LayerPerceptron applied tothe final combinedvector for transformation.\neji represents the features of the edge from node j to node i. e is a small constant often ",
+          "filename": "fuzzy_gnn_scanned.pdf",
+          "page": 5
+        },
+        {
+          "text": "attaglia et al., 2018; Veličković et al., 2020b) and theoretically\n(Xu et al., 2021) that GNNs with max aggregation extrapolate better on certain\nalgorithmic tasks (e.g., the shortest path finding problem) than GNNs with sum\naggregation. Additionally, when performing message passing, we treat the graph\nas an unweighted graph, and the random weight matrix for finding the shortest\npath is treated as",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 13
+        },
+        {
+          "text": "-world shortest-path finding problems are often too complex to be\naccurately represented by simple scalar values.\nTo leverage the strengths of\nboth deep learning models and classical algorithms, recent advancements in\nneural algorithmic reasoning (NAR) aim to construct neural networks capable of approximating and executing classical algorithms (Veličković and Blundell, 2021; Veličković et al., 202",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 3
+        }
+      ],
+      "retrieval_hit": true,
+      "seconds": 0.1
+    },
+    {
+      "id": "t08",
+      "type": "text",
+      "source": "gnn_leak_detection.pdf",
+      "pages": "14;17",
+      "question": "What replaces the linear encoder and decoder when the NAR model is adapted into AIGNN for water networks?",
+      "reference": "Chebyshev convolutional layers replace the linear encoder and decoder, while the processor is retained.",
+      "answer": "",
+      "refused": null,
+      "route": "",
+      "confidence": "",
+      "contexts": [
+        {
+          "text": "and decoder are used to map the real-world\nproblem to and from the abstract space in which the processor operates in.\nThis requires the model to be more expressive compared to that used to map\nthe max-flow problem to and from the abstract space. Given that the processor’s\nparameters are frozen, linear encoders and decoders lack the expressivity needed\nfor effective mapping between the real world a",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 14
+        },
+        {
+          "text": "Reconstructor and Predictor\nAfter developing the NAR model capable of executing the Ford-Fulkerson\nalgorithm, we transfer the learned algorithmic knowledge to GNNs for pressure reconstruction and predictions in WDNs, creating the Algorithm-Informed\nGraph Neural Network (AIGNN). Specifically, AIGNN replaces the encoder\nand decoder in the NAR with Chebyshev convolutional layers to handle the\nreal-wo",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 14
+        },
+        {
+          "text": "At each algorithm step, each input\nand the current hints are encoded with separate linear encoders. The encoded\ninformation is then processed by the processor, followed by decoders that generate the next hints or the algorithm output if it is the last algorithm step. It is\nimportant to note that there are two types of encoders in the NAR model. The\nfirst type encodes the inputs and is used only on",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 13
+        },
+        {
+          "text": "predict the flow matrix and accurately recover all the intermediate steps of the\nalgorithm.\nAfter training the NAR model with Ford-Fulkerson algorithm instances, its\nprocessor inherits the algorithmic reasoning abilities. We then adapt the pro-cessor to address the task of pressure reconstruction and prediction in WDNs.\nSpecifically, we replace the linear encoder and decoder of the NAR model with\n",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 17
+        },
+        {
+          "text": "that\ncan be used as a useful tie-breaker when algorithms could make an arbitrary\nchoice on which node to explore next (Veličković et al., 2022). The intermediate\nalgorithmic trajectory is captured by hints, which include:\n• A mask vector indicating whether the node is in the augmenting path or\nnot\n• The augmenting path represented by a vector specifying the predecessor\nnode of each node\n• The maxi",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 12
+        }
+      ],
+      "retrieval_hit": true,
+      "seconds": 0.4
+    },
+    {
+      "id": "t09",
+      "type": "text",
+      "source": "gnn_leak_detection.pdf",
+      "pages": "16",
+      "question": "How many junctions, pipes and pressure sensors does the L-town network have?",
+      "reference": "The L-town network has 785 junctions, 905 pipes and 33 pressure sensors, collecting data at a 5-minute resolution.",
+      "answer": "",
+      "refused": null,
+      "route": "",
+      "confidence": "",
+      "contexts": [
+        {
+          "text": "section, we evaluate the performance of the proposed algorithm using a case study on the L-town WDN introduced in the BattleDIM competition\n(Vrachimis et al., 2020). The L-town WDN consists of 785 junctions and 905\npipes, with 33 pressure sensors located at different junctions across the network,\ncollecting data with a 5-minute temporal resolution. The WDN is modeled as\na graph, where junctions ar",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 16
+        },
+        {
+          "text": "different locations.\nThe remaining content of this paper is structured as follows. In Section 2, we\nreview related work on pressure estimation in WDN and NAR. Section 3 pro-vides the problem definition for leakage detection and localization in WDNs, as\nwell as an overview of the basic architecture of NAR models. Section 4 presents\nour proposed method, AIGNN. In Section 5, we evaluate the effective",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 5
+        },
+        {
+          "text": ",\nthe transfer of algorithmic knowledge to solve real-world problems – advocated\nas the major motivation for designing NAR models (Veličković and Blundell,\n2021) – remains under-explored. To date, only a few works have explored the\nuse of NAR in biology and computer network configuration problems (Beurer-\nKellner et al., 2022; Georgiev et al., 2023; Numeroso et al., 2023). The application of NAR t",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 7
+        },
+        {
+          "text": "Zhou et al., 2019). Large and\nwidespread WDNs can contain thousands of junctions, making it infeasible to\nemploy and maintain sensors at every junction due to infrastructural limits,\nprivacy concerns, and high costs (Truong et al., 2023). Consequently, estimating the complete network pressure based on partially observable pressure\nmeasurements is typically the first and essential step for leakage ",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 5
+        },
+        {
+          "text": "3). Previous approaches\nhave employed various techniques such as support vector machines (Mounce\net al., 2011), evolutionary polynomial regression (Laucelli et al., 2016), and\n2\nconvolutional neural networks (Fang et al., 2019).\nIn practice, it is too expensive to monitor every junction in a WDN, resulting in limited sensor coverage. Given that WDNs are inherently represented as\ngraphs with juncti",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 2
+        }
+      ],
+      "retrieval_hit": true,
+      "seconds": 0.2
+    },
+    {
+      "id": "t10",
+      "type": "text",
+      "source": "gnn_leak_detection.pdf",
+      "pages": "15;18",
+      "question": "What are ChebNetIN and ChebNetEMB?",
+      "reference": "They are ChebNet variants augmented with AIGNN embeddings: ChebNetIN adds the AIGNN embedding as an additional input, and ChebNetEMB adds it as an additional embedding before the last layer.",
+      "answer": "",
+      "refused": null,
+      "route": "",
+      "confidence": "",
+      "contexts": [
+        {
+          "text": "the worst, as it only incorporates the algorithm information before the last\nlayer, leaving most of the reasoning process to the non-algorithmic part. Conversely, ChebNetIN achieves the best generalization performance since it uses the\nAIGNN embedding as input, forcing the model to focus more on the generalizable algorithmic information. The promising results obtained with ChebNetIN\nalso imply the",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 20
+        },
+        {
+          "text": "allows us to evaluate different models’ ability to detect leakages.\nTo reduce\nfalse alarms, a leakage is only reported if the residuals for the corresponding\npipe exceed the threshold consecutively for six hours. After parameter-tuning\nusing the data from 2018, we test the model using the data from 2019, during\nwhich 23 leakages occurred. The number of detected leakages along with the\ncorrespondin",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 20
+        },
+        {
+          "text": ", we conduct experiments\non different configurations of sensor locations, training the models on only one\nsensor configuration. Standard approaches typically fail to generalize in such\nsetups. We hypothesize that the processor in our approach may have captured more general information about the system flow, enabling it to transfer\neffectively to other sensor configurations. Specifically, we first ",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 19
+        },
+        {
+          "text": "different semantic information from the pressure measurements compared to ChebNet. Motivated by this, we propose two approaches\nthat incorporate the information extracted by AIGNN into ChebNet, namely\nChebNet INand ChebNet EMB. Specifically, ChebNet INaugments the AIGNN\n18\nembedding as additional input while ChebNet EMBaugments the AIGNN embedding as an additional embedding before the last layer.\n",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 18
+        },
+        {
+          "text": "by AIGNN differs from\nthat extracted by ChebNet. Moreover, the additional improvement achieved by\nChebNet INand ChebNet EMBindicates that AIGNN can effectively serve as an\nauxiliary model, enhancing the performance of existing models.\nTable 2: Relative reconstruction error of the reconstructor.\n% Rel. error Rel. error (+) Rel. error (-)\nChebNet 0.4575 ±0.1067 0.4280 ±0.1144 0.4588 ±0.1069\nAIGNN 0.",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 19
+        }
+      ],
+      "retrieval_hit": true,
+      "seconds": 0.1
+    },
+    {
+      "id": "t11",
+      "type": "text",
+      "source": "gnn_leak_detection.pdf",
+      "pages": "20",
+      "question": "Which model generalized best when tested on different sensor placements and what was its relative reconstruction error?",
+      "reference": "ChebNetIN generalized best, with a relative reconstruction error of 2.2823 ± 0.5074 percent, compared with 17.065 percent for ChebNet.",
+      "answer": "",
+      "refused": null,
+      "route": "",
+      "confidence": "",
+      "contexts": [
+        {
+          "text": ", we conduct experiments\non different configurations of sensor locations, training the models on only one\nsensor configuration. Standard approaches typically fail to generalize in such\nsetups. We hypothesize that the processor in our approach may have captured more general information about the system flow, enabling it to transfer\neffectively to other sensor configurations. Specifically, we first ",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 19
+        },
+        {
+          "text": "the worst, as it only incorporates the algorithm information before the last\nlayer, leaving most of the reasoning process to the non-algorithmic part. Conversely, ChebNetIN achieves the best generalization performance since it uses the\nAIGNN embedding as input, forcing the model to focus more on the generalizable algorithmic information. The promising results obtained with ChebNetIN\nalso imply the",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 20
+        },
+        {
+          "text": "2342 ±0.0375 0.2394 ±0.0341\nTable 3: Relative prediction error of the predictor.\n% Rel. error Rel. error (+) Rel. error (-)\nChebNet 0.3774 ±0.1588 0.3905 ±0.1784 0.3769 ±0.1581\nAIGNN 0.3249 ±0.0685 0.3271 ±0.0633 0.3248 ±0.0691\nChebNet IN0.2964 ±0.0874 0.2877 ±0.0886 0.2968 ±0.0874\nChebNet EMB0.2077 ±0.0074 0.2126 ±0.0153 0.2075 ±0.0073\n5.4. Evaluation of the generalization ability\nTo validate the",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 19
+        },
+        {
+          "text": "by AIGNN differs from\nthat extracted by ChebNet. Moreover, the additional improvement achieved by\nChebNet INand ChebNet EMBindicates that AIGNN can effectively serve as an\nauxiliary model, enhancing the performance of existing models.\nTable 2: Relative reconstruction error of the reconstructor.\n% Rel. error Rel. error (+) Rel. error (-)\nChebNet 0.4575 ±0.1067 0.4280 ±0.1144 0.4588 ±0.1069\nAIGNN 0.",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 19
+        },
+        {
+          "text": "the processor are initialized with those\nfrom the NAR model but are fine-tuned together with the parameters in\nthe encoder and decoder.\n• AIGNNPOS: This version has the same architecture and training strategy\nas AIGNN but includes additional positional features, computed as evenly\nspaced numbers between 0 and 1 according to the node index.\nWe compare the three models on the pressure reconstruction",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 17
+        }
+      ],
+      "retrieval_hit": true,
+      "seconds": 0.1
+    },
+    {
+      "id": "t12",
+      "type": "text",
+      "source": "gnn_leak_detection.pdf",
+      "pages": "21",
+      "question": "How many of the 23 leakages in 2019 did ChebNet and ChebNetEMB detect?",
+      "reference": "ChebNet detected 15 of 23 leakages and ChebNetEMB detected 19 of 23.",
+      "answer": "",
+      "refused": null,
+      "route": "",
+      "confidence": "",
+      "contexts": [
+        {
+          "text": "allows us to evaluate different models’ ability to detect leakages.\nTo reduce\nfalse alarms, a leakage is only reported if the residuals for the corresponding\npipe exceed the threshold consecutively for six hours. After parameter-tuning\nusing the data from 2018, we test the model using the data from 2019, during\nwhich 23 leakages occurred. The number of detected leakages along with the\ncorrespondin",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 20
+        },
+        {
+          "text": "2.2823 ± 0.5074\n3.1819 ± 0.7282\n2.2427 ± 0.5077\nChebNetEMB\n11.085 ± 1.3645\n11.449 ± 2.7778\n11.069 ± 1.3981\n5.5. Leakage Detection\nTo detect and localize the leakages, we first calculate the edge residual signal\n ̄r(E)\nuv (t). Using data from 2018, during which 14 leakages occurred, we determine\nthe threshold parameter ξ. The sliding window size s is set to 12, covering one\nhour. To tune the thresh",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 20
+        },
+        {
+          "text": "due to its low ξ value, which also resulted in numerous false alarms. The results\nhighlight the importance of combining both algorithmic and non-algorithmic\nknowledge for effective leakage detection.\n20\nTable 5: Leakage detection performance comparison.\nξ\nDeteced leakages (2018)\nDetected leakages (2019)\nChebNet\n1.2\n12/14\n15/23\nAIGNN\n0.25\n12/14\n22/23\nChebNetIN\n1.4\n12/14\n17/23\nChebNetEMB\n1.6\n12/14\n1",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 20
+        },
+        {
+          "text": "propose two variants that integrate the embeddings generated by AIGNN\nwith other models. This allows the resulting models to benefit from max-flow\ninformation without losing other useful information. Specifically, we use the\nembedding before the last layer of AIGNN as the augmenting embedding. This\nembedding is then fed into the ChebNet model (Garðarsson et al., 2022) in two\nways: as additional in",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 15
+        },
+        {
+          "text": "competition provides two years of data from 2018 and 2019. Data from 2018\nwill be used to determine the threshold ξ for residual analysis, while data from\n2019 will be employed to evaluate the model’s performance in leakage detection\nand localization.\nWe compare our method with the state-of-the-art GNN model for leakage\ndetection and localization, specifically the ChebNet model proposed by Garðars",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 16
+        }
+      ],
+      "retrieval_hit": true,
+      "seconds": 0.1
+    },
+    {
+      "id": "t13",
+      "type": "text",
+      "source": "gnn_leak_detection.pdf",
+      "pages": "16;17",
+      "question": "How many graphs, and of what size, were sampled to train the neural algorithmic reasoning model?",
+      "reference": "1000 graphs with 16 nodes each, sampled from the Erdos-Renyi distribution with random edge capacities.",
+      "answer": "",
+      "refused": null,
+      "route": "",
+      "confidence": "",
+      "contexts": [
+        {
+          "text": "in\nwater distribution networks using graph neural networks with sparse monitoring data. Water Research 250, 121018.\nLiemberger, R., Wyatt, A., 2019. Quantifying the global non-revenue water\nproblem. Water Supply 19, 831–837.\nde Luca, A.B., Fountoulakis, K., 2024. Simulation of graph algorithms with\nlooped transformers. arXiv preprint arXiv:2402.01107 .\nMahdavi, S., Swersky, K., Kipf, T., Hashemi, ",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 23
+        },
+        {
+          "text": "716\n717\n718\n719\n720\n721\n722\n723\n724\n725\n726\n727\n728\n729\n730\n731\n732\n733\n734\n735\n736\n737\n738\n739\n740\n741\n742\n743\n744\n745\n746\n747\n748\n749\n750\n751\n752\n753\n754\n755\n756\n757\n758\n759\n760\n761\n762\n763\n764\n765\n766\n767\n768\n769\n770\n771\n772\n773\n774\n775\n776\n777\n778\n779\n780\n781\n782\nFigure 3: L-town network.\nand the output of the algorithm is represented by a flow matrix. Specifically,\nfollowing the setting in CL",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 17
+        },
+        {
+          "text": "6; Bellman, 1958), solutions are typically\nobtained through iterative steps, producing an output along with a trajectory\nof intermediate steps. To align the processor with the underlying classical algorithm, it is usually designed based on some form of recurrent unit, aiming\nto replicate the full trajectory of algorithmic behaviors.\nGiven the theoretical evidence supporting that GNN models align w",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 7
+        },
+        {
+          "text": "-distribution data (Wang et al., 2022). This generalization ability\nis especially important for handling WDNs, as deep learning models are often\ntrained based on simulated data generated by mathematical hydraulic models. Given the inherent uncertainty of real-world scenarios, data-driven models\nare likely to encounter distribution shifts. For instance, changes in pipe conditions or network structu",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 3
+        },
+        {
+          "text": "-world shortest-path finding problems are often too complex to be\naccurately represented by simple scalar values.\nTo leverage the strengths of\nboth deep learning models and classical algorithms, recent advancements in\nneural algorithmic reasoning (NAR) aim to construct neural networks capable of approximating and executing classical algorithms (Veličković and Blundell, 2021; Veličković et al., 202",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 3
+        }
+      ],
+      "retrieval_hit": true,
+      "seconds": 0.1
+    },
+    {
+      "id": "s01",
+      "type": "scanned",
+      "source": "fuzzy_gnn_scanned.pdf",
+      "pages": "1;4",
+      "question": "Which GNN architecture was selected as the best performer and what is its fuzzy variant called?",
+      "reference": "The generalized graph convolution network (GENConv) was selected, and its fuzzy-enhanced variant is called FGENConv.",
+      "answer": "",
+      "refused": null,
+      "route": "",
+      "confidence": "",
+      "contexts": [
+        {
+          "text": "Conv\n2-8\n16-64\n0.845\n0.786\n0.031\n1506-16143\nGATv2Conv\n28\n1664\n0.856\n0.810\n0.029\n1237-12098\nGCNConv\n2-8\n1664\n0.113\n0.106\n0.062\n745-5635\nGENConv\n28\n1664\n0.858\n0.811\n0.028\n10838115\nSAGEConv\n2-8\n1664\n0.862\n0.774\n0.033\n8074216\nTransformerConv\n2-8\n1664\n0.868\n0.783\n0.031\n12669214\nFuzzyGENConv\n4\n64\n0.814\n0.758\n0.032\n6683-6683\nNote:Bold indicates topperformance within each task.\nour approachwas abletocaptu",
+          "filename": "fuzzy_gnn_scanned.pdf",
+          "page": 10
+        },
+        {
+          "text": "画\n10%Val\nGraph\nclass\n画\nHidden units\nFeatureextraction\nForwardPass\nBCENode Los=-[slog(gi)+(1-yi)log(1-gi)]\nGraph,\nEvaluation\nclass\nBCEGraph Loss =-1[y;log(gi) + (1 -yi) log(1 9i)]\nFig.2.Experimentalconfigurationforleakdetection andlocalization.Continuous arrowsindicatethenodelevel leak localization path,while dashed arrows show the graph-level leak detection path.\n4\nResults andDiscussion\nThe result",
+          "filename": "fuzzy_gnn_scanned.pdf",
+          "page": 8
+        },
+        {
+          "text": "accuracy interpretability trade off.The significant increase in run time is likely due to the\nexpandedfeaturespaceresultingfromfuzzification.\nOverall,GENConvdelivered thehighestpredictive accuracyforbothleakdetection andlocalization, while its fuzzified version, FGENConv, showed a slight drop in performance. Nonetheless,\nit provided explainable outputs via fuzzy rule-based interpretations. This tr",
+          "filename": "fuzzy_gnn_scanned.pdf",
+          "page": 9
+        },
+        {
+          "text": ".\n3.1GNNArchitectures\nGNNs operate fundamentally on a graph G = (V,E), where V is the set of nodes and E the set of\nedges, with each node i E V having a feature vector h at layer l. The core mechanism is message\npassing, where nodes aggregate information from their neighbors N(i) and update their representations.Webegin with GCNConv as the foundational architecture and progressivelyintroduce more\n",
+          "filename": "fuzzy_gnn_scanned.pdf",
+          "page": 4
+        },
+        {
+          "text": "detection combined with leak localization (a joint graph and node classification task). The evaluation metrics include graph F1 score,\nnode F1 score,test loss,and runtime.\n4.1\nLeakDetection/GraphClassification\nFor theleak detection task,all models were trained under identical experimental conditions with a\nconsistent range of network depths and hidden layer dimensions.\nGENConv emerged as the toppe",
+          "filename": "fuzzy_gnn_scanned.pdf",
+          "page": 8
+        }
+      ],
+      "retrieval_hit": true,
+      "seconds": 0.1
+    },
+    {
+      "id": "s02",
+      "type": "scanned",
+      "source": "fuzzy_gnn_scanned.pdf",
+      "pages": "1",
+      "question": "What Graph F1 scores did the fuzzy model FGENConv achieve for leak detection and localization?",
+      "reference": "FGENConv achieved Graph F1 scores of 0.889 for detection and 0.814 for localization, slightly below GENConv's 0.938 and 0.858.",
+      "answer": "",
+      "refused": null,
+      "route": "",
+      "confidence": "",
+      "contexts": [
+        {
+          "text": "detection combined with leak localization (a joint graph and node classification task). The evaluation metrics include graph F1 score,\nnode F1 score,test loss,and runtime.\n4.1\nLeakDetection/GraphClassification\nFor theleak detection task,all models were trained under identical experimental conditions with a\nconsistent range of network depths and hidden layer dimensions.\nGENConv emerged as the toppe",
+          "filename": "fuzzy_gnn_scanned.pdf",
+          "page": 8
+        },
+        {
+          "text": "features and localized node-level anomalies.\nFGENConv attained a Graph F1 of 0.814 and a Node F1 of 0.758.While scores are modestly\nlower than those of GENConv,they remain within the 5% trade-off estimated from the graph\nclassification model.\nGATv2Conv (Graph F1: 0.835, Node F1: 0.779),TransformerConv (0.808, 0.746), and\nSAGEConv (0.783, 0.717) showed reasonable performance in the joint task of le",
+          "filename": "fuzzy_gnn_scanned.pdf",
+          "page": 9
+        },
+        {
+          "text": "superior performance and\ndevelopedafuzzy-enhancedvariantthatoffersintuitiveexplanationsforclassifiedleaklocations. Our fuzzy graph neural network (FGENConv)achieved Graph F1 scores of 0.889\nfor detection and 0.814 for localization—slightlybelowthe crisp GENConv's 0.938 and\n0.858,respectively—yet it compensates by providing spatially localized,fuzzy rule-based\nexplanations.By striking the right bal",
+          "filename": "fuzzy_gnn_scanned.pdf",
+          "page": 1
+        },
+        {
+          "text": "画\n10%Val\nGraph\nclass\n画\nHidden units\nFeatureextraction\nForwardPass\nBCENode Los=-[slog(gi)+(1-yi)log(1-gi)]\nGraph,\nEvaluation\nclass\nBCEGraph Loss =-1[y;log(gi) + (1 -yi) log(1 9i)]\nFig.2.Experimentalconfigurationforleakdetection andlocalization.Continuous arrowsindicatethenodelevel leak localization path,while dashed arrows show the graph-level leak detection path.\n4\nResults andDiscussion\nThe result",
+          "filename": "fuzzy_gnn_scanned.pdf",
+          "page": 8
+        },
+        {
+          "text": "5% is argued tobe insignificant in\nlightofthegainedexplainabilityadvantage.\nOther architectures,such as GATConv,GATv2Conv,and TransformerConv,provided comparable performance with Graph F1 scores in the range of 0.927-0.934. Their runtime,however,varied\nmore widely (from 1271 up to 7046 seconds),indicating that runtime efficiency may be sensitive to\nthe specific architecture and hyperparameter conf",
+          "filename": "fuzzy_gnn_scanned.pdf",
+          "page": 9
+        }
+      ],
+      "retrieval_hit": true,
+      "seconds": 0.1
+    },
+    {
+      "id": "s03",
+      "type": "scanned",
+      "source": "fuzzy_gnn_scanned.pdf",
+      "pages": "4",
+      "question": "Which dataset is used in the experiments, and how many scenarios does it contain?",
+      "reference": "The Hanoi Benchmark Network dataset (LeakDB), which contains 1,000 scenarios, each a one-year time series with a 30-minute time step.",
+      "answer": "",
+      "refused": null,
+      "route": "",
+      "confidence": "",
+      "contexts": [
+        {
+          "text": ", we conduct experiments\non different configurations of sensor locations, training the models on only one\nsensor configuration. Standard approaches typically fail to generalize in such\nsetups. We hypothesize that the processor in our approach may have captured more general information about the system flow, enabling it to transfer\neffectively to other sensor configurations. Specifically, we first ",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 19
+        },
+        {
+          "text": "Conv[36],GATv2Conv[4],GENConv [20],and TransformerConv[32]—each\nbearing different mechanisms for aggregating and updating node features, ranging from standard\naveraging to attention-based methods. These models are tested under identical conditions for two\ntasks: graph-level classification to detect leaks and node-level classification to pinpoint their locations. Our experiments utilize the Hanoi B",
+          "filename": "fuzzy_gnn_scanned.pdf",
+          "page": 4
+        },
+        {
+          "text": "section, we evaluate the performance of the proposed algorithm using a case study on the L-town WDN introduced in the BattleDIM competition\n(Vrachimis et al., 2020). The L-town WDN consists of 785 junctions and 905\npipes, with 33 pressure sensors located at different junctions across the network,\ncollecting data with a 5-minute temporal resolution. The WDN is modeled as\na graph, where junctions ar",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 16
+        },
+        {
+          "text": "2342 ±0.0375 0.2394 ±0.0341\nTable 3: Relative prediction error of the predictor.\n% Rel. error Rel. error (+) Rel. error (-)\nChebNet 0.3774 ±0.1588 0.3905 ±0.1784 0.3769 ±0.1581\nAIGNN 0.3249 ±0.0685 0.3271 ±0.0633 0.3248 ±0.0691\nChebNet IN0.2964 ±0.0874 0.2877 ±0.0886 0.2968 ±0.0874\nChebNet EMB0.2077 ±0.0074 0.2126 ±0.0153 0.2075 ±0.0073\n5.4. Evaluation of the generalization ability\nTo validate the",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 19
+        },
+        {
+          "text": "Zhou et al., 2019). Large and\nwidespread WDNs can contain thousands of junctions, making it infeasible to\nemploy and maintain sensors at every junction due to infrastructural limits,\nprivacy concerns, and high costs (Truong et al., 2023). Consequently, estimating the complete network pressure based on partially observable pressure\nmeasurements is typically the first and essential step for leakage ",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 5
+        }
+      ],
+      "retrieval_hit": true,
+      "seconds": 0.1
+    },
+    {
+      "id": "s04",
+      "type": "scanned",
+      "source": "fuzzy_gnn_scanned.pdf",
+      "pages": "1",
+      "question": "How much treated water do water distribution networks lose globally each year?",
+      "reference": "32 billion cubic meters of treated water each year.",
+      "answer": "",
+      "refused": null,
+      "route": "",
+      "confidence": "",
+      "contexts": [
+        {
+          "text": "superior performance and\ndevelopedafuzzy-enhancedvariantthatoffersintuitiveexplanationsforclassifiedleaklocations. Our fuzzy graph neural network (FGENConv)achieved Graph F1 scores of 0.889\nfor detection and 0.814 for localization—slightlybelowthe crisp GENConv's 0.938 and\n0.858,respectively—yet it compensates by providing spatially localized,fuzzy rule-based\nexplanations.By striking the right bal",
+          "filename": "fuzzy_gnn_scanned.pdf",
+          "page": 1
+        },
+        {
+          "text": "task-relevant and generalizable features. To the best of our knowledge,\nthis is the first work that applies algorithmic reasoning to engineering applications. Experimental results demonstrate that the proposed algorithm-informed\napproach achieves superior results with better generalization ability compared\nto GNNs that do not incorporate algorithmic knowledge.\nKeywords:\nGraph neural networks, neur",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 1
+        },
+        {
+          "text": "Bennani, M., Csordás,\nR., Dudzik, A.J., Bošnjak, M., Vitvitskyi, A., Rubanova, Y., et al., 2022.\nA generalist neural algorithmic learner, in: Learning on Graphs Conference,\nPMLR. pp. 2–1.\nIslam, M.R., Azam, S., Shanmugam, B., Mathur, D., 2022. A review on current\ntechnologies and future direction of water leakage detection in water distribution network. IEEE Access .\nLaucelli, D., Romano, M., Savi",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 23
+        },
+        {
+          "text": "ovic, P., Cucurull, G., Casanova, A., Romero, A., Lio, P., Bengio, Y.: Graph attention networks.\narXiv preprint arXiv:1710.10903 (2017)\n37.Vrachimis,S.G.,Kyriakou, M.S.,et al.:Leakdb: a benchmark dataset for leakage diagnosis in water\ndistribution networks:(146).In:WDSA/CCWI Joint ConferenceProceedings.vol.1(2018)\n38.Wu,Z.Y.,Sage,P.,Turtle,D.:Pressure-dependent leak detection model and its applica",
+          "filename": "fuzzy_gnn_scanned.pdf",
+          "page": 12
+        },
+        {
+          "text": "B.: Deepergcn: All you need to train deeper gcns. arXiv preprint\narXiv:2006.07739 (2020)\n21.Li,X.,Wu,Y.: A convolutional graph neural network model for water distribution network leakage\ndetection based on segment feature fusion strategy.Water 16(24),3555 (2024)\n22. Liemberger, R., Marin, P.: The challenge of reducing non-revenue water in developing countries: How\nthe private sector can help.Tech.",
+          "filename": "fuzzy_gnn_scanned.pdf",
+          "page": 11
+        }
+      ],
+      "retrieval_hit": true,
+      "seconds": 0.1
+    },
+    {
+      "id": "s05",
+      "type": "scanned",
+      "source": "fuzzy_gnn_scanned.pdf",
+      "pages": "6",
+      "question": "How is the data fuzzified for the fuzzy model?",
+      "reference": "A grid-partitioning approach divides the range of each numerical feature into three Gaussian membership functions: Low, Medium and High.",
+      "answer": "",
+      "refused": null,
+      "route": "",
+      "confidence": "",
+      "contexts": [
+        {
+          "text": ", is  AND p,  then leak at nooe\nend\np, is O AND pz s O then leak at node\nO\nFig.1.Explainability framework for GNN-based leak detection in water distribution networks,illustrating the sequential process: preprocessing, training, tuning, model selection, retraining with fuzzification,\nexplanation via GNNExplainer,subgraph identification,and finally,fuzzy rule extraction for interpretable\npredictions",
+          "filename": "fuzzy_gnn_scanned.pdf",
+          "page": 6
+        },
+        {
+          "text": "accuracy interpretability trade off.The significant increase in run time is likely due to the\nexpandedfeaturespaceresultingfromfuzzification.\nOverall,GENConvdelivered thehighestpredictive accuracyforbothleakdetection andlocalization, while its fuzzified version, FGENConv, showed a slight drop in performance. Nonetheless,\nit provided explainable outputs via fuzzy rule-based interpretations. This tr",
+          "filename": "fuzzy_gnn_scanned.pdf",
+          "page": 9
+        },
+        {
+          "text": "1, node features and the adjacency matrix are obtained.\nThen multiple GNN architectures are trained on the crisp dataset,and thebest-performing model\nis identified based onleak detection and localizationmetrics as illustrated in steps 2,3 and 4.Then\nFuzzification\nPreprocessing\nGrid Partitioning\nHydraulic simulation\nNode features\n{μ1....,μ},{o1\nstart\nn_clusters\nGraph construction\nu(z)=ex\nFeature ex",
+          "filename": "fuzzy_gnn_scanned.pdf",
+          "page": 5
+        },
+        {
+          "text": "superior performance and\ndevelopedafuzzy-enhancedvariantthatoffersintuitiveexplanationsforclassifiedleaklocations. Our fuzzy graph neural network (FGENConv)achieved Graph F1 scores of 0.889\nfor detection and 0.814 for localization—slightlybelowthe crisp GENConv's 0.938 and\n0.858,respectively—yet it compensates by providing spatially localized,fuzzy rule-based\nexplanations.By striking the right bal",
+          "filename": "fuzzy_gnn_scanned.pdf",
+          "page": 1
+        },
+        {
+          "text": "most to the model's prediction is identified using\nGNNExplainer [39]; an explainability framework that maximizes the mutual information between\nthe model's prediction Y and a subgraph Gs of the original graph G. In practice, it highlights a\nset of critical nodes (and their connecting edges)whose features most infuence the final output.\nFinally, having localized the critical subgraph via GNNExplain",
+          "filename": "fuzzy_gnn_scanned.pdf",
+          "page": 6
+        }
+      ],
+      "retrieval_hit": true,
+      "seconds": 0.1
+    },
+    {
+      "id": "s06",
+      "type": "scanned",
+      "source": "fuzzy_gnn_scanned.pdf",
+      "pages": "6",
+      "question": "Which method identifies the region of the graph that contributes most to the prediction and what does it maximize?",
+      "reference": "GNNExplainer, which maximizes the mutual information between the model's prediction and a subgraph of the original graph.",
+      "answer": "",
+      "refused": null,
+      "route": "",
+      "confidence": "",
+      "contexts": [
+        {
+          "text": "the output of\nthe reconstructor significantly deviates from the output of the predictor, it is\nindicative of a potential leak.\nInstead of directly training the model to learn the input-output mappings,\nwe propose to enhance the model with algorithmic knowledge. The flow properties of a water network are highly informative for inferring pressures, and the\nability to simulate the algorithm for max-f",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 11
+        },
+        {
+          "text": "most to the model's prediction is identified using\nGNNExplainer [39]; an explainability framework that maximizes the mutual information between\nthe model's prediction Y and a subgraph Gs of the original graph G. In practice, it highlights a\nset of critical nodes (and their connecting edges)whose features most infuence the final output.\nFinally, having localized the critical subgraph via GNNExplain",
+          "filename": "fuzzy_gnn_scanned.pdf",
+          "page": 6
+        },
+        {
+          "text": "2022; Ashraf et al., 2023). During\ninference, these models only require data collected by monitoring devices, eliminating the need for in-depth system knowledge. Since WDNs can inherently\nbe modeled as graphs, graph-based approaches can leverage the relational inductive biases to enhance model performance (Wu et al., 2021). The graph\n5\ninterpolation methods typically involve two steps: first, trai",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 5
+        },
+        {
+          "text": "1.Convexity:Unimodal Gaussians naturally satisfy convexity.Coverage:The three\nsets collectively span the full feature range.Distinguishability: Overlaps are constrained below a\nset threshold [15]to maintain semantic interpretability.\nOnce GNNExplainer identifies the contributing membership functions within the subgraph, the\nmost infuential node features are selected and combined via logical AND op",
+          "filename": "fuzzy_gnn_scanned.pdf",
+          "page": 6
+        },
+        {
+          "text": ", is  AND p,  then leak at nooe\nend\np, is O AND pz s O then leak at node\nO\nFig.1.Explainability framework for GNN-based leak detection in water distribution networks,illustrating the sequential process: preprocessing, training, tuning, model selection, retraining with fuzzification,\nexplanation via GNNExplainer,subgraph identification,and finally,fuzzy rule extraction for interpretable\npredictions",
+          "filename": "fuzzy_gnn_scanned.pdf",
+          "page": 6
+        }
+      ],
+      "retrieval_hit": true,
+      "seconds": 0.3
+    },
+    {
+      "id": "s07",
+      "type": "scanned",
+      "source": "fuzzy_gnn_scanned.pdf",
+      "pages": "6;7",
+      "question": "What semantic interpretability constraints are imposed on the fuzzy sets?",
+      "reference": "Normality, convexity, coverage and distinguishability.",
+      "answer": "",
+      "refused": null,
+      "route": "",
+      "confidence": "",
+      "contexts": [
+        {
+          "text": "most to the model's prediction is identified using\nGNNExplainer [39]; an explainability framework that maximizes the mutual information between\nthe model's prediction Y and a subgraph Gs of the original graph G. In practice, it highlights a\nset of critical nodes (and their connecting edges)whose features most infuence the final output.\nFinally, having localized the critical subgraph via GNNExplain",
+          "filename": "fuzzy_gnn_scanned.pdf",
+          "page": 6
+        },
+        {
+          "text": "1.Convexity:Unimodal Gaussians naturally satisfy convexity.Coverage:The three\nsets collectively span the full feature range.Distinguishability: Overlaps are constrained below a\nset threshold [15]to maintain semantic interpretability.\nOnce GNNExplainer identifies the contributing membership functions within the subgraph, the\nmost infuential node features are selected and combined via logical AND op",
+          "filename": "fuzzy_gnn_scanned.pdf",
+          "page": 6
+        },
+        {
+          "text": "our approachwas abletocapture spatial-temporal dependencieswhilemaintaining interpretability.\nWe identified GENConv as the top-performing GNN architecture for combined leak detection and\nlocalization tasks.We also introduced FGENConv,a fuzzy-enhanced variant offering rule-based ex-planations for improved interpretability, aiding experts and reducing false positives. This marks the\nfirst integratio",
+          "filename": "fuzzy_gnn_scanned.pdf",
+          "page": 10
+        },
+        {
+          "text": "accuracy interpretability trade off.The significant increase in run time is likely due to the\nexpandedfeaturespaceresultingfromfuzzification.\nOverall,GENConvdelivered thehighestpredictive accuracyforbothleakdetection andlocalization, while its fuzzified version, FGENConv, showed a slight drop in performance. Nonetheless,\nit provided explainable outputs via fuzzy rule-based interpretations. This tr",
+          "filename": "fuzzy_gnn_scanned.pdf",
+          "page": 9
+        },
+        {
+          "text": "-distribution data (Wang et al., 2022). This generalization ability\nis especially important for handling WDNs, as deep learning models are often\ntrained based on simulated data generated by mathematical hydraulic models. Given the inherent uncertainty of real-world scenarios, data-driven models\nare likely to encounter distribution shifts. For instance, changes in pipe conditions or network structu",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 3
+        }
+      ],
+      "retrieval_hit": true,
+      "seconds": 0.2
+    },
+    {
+      "id": "s08",
+      "type": "scanned",
+      "source": "fuzzy_gnn_scanned.pdf",
+      "pages": "7",
+      "question": "What learning rate, batch size and early-stopping patience were used for training?",
+      "reference": "A learning rate of 0.001, a batch size of 512 and early stopping with a patience of 10 epochs.",
+      "answer": "",
+      "refused": null,
+      "route": "",
+      "confidence": "",
+      "contexts": [
+        {
+          "text": "are computed to capture the\nnetwork's operational state.The processed data is then used to construct a graph g =(V,&),where\nvertices V represent the nodes of theWDNand edges  represent the physical pipe connections\nbetween them. The adjacency matrix A is generated based on the provided topology, with Aij = 1\nindicating a direct connection between nodes i and j.Each node i is assigned a feature vec",
+          "filename": "fuzzy_gnn_scanned.pdf",
+          "page": 7
+        },
+        {
+          "text": "716\n717\n718\n719\n720\n721\n722\n723\n724\n725\n726\n727\n728\n729\n730\n731\n732\n733\n734\n735\n736\n737\n738\n739\n740\n741\n742\n743\n744\n745\n746\n747\n748\n749\n750\n751\n752\n753\n754\n755\n756\n757\n758\n759\n760\n761\n762\n763\n764\n765\n766\n767\n768\n769\n770\n771\n772\n773\n774\n775\n776\n777\n778\n779\n780\n781\n782\nFigure 3: L-town network.\nand the output of the algorithm is represented by a flow matrix. Specifically,\nfollowing the setting in CL",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 17
+        },
+        {
+          "text": "AGEConv,GCNConv,\nBatch Size:512\nLR Scheduler:\nTransConv,GATConv,GATv2Conv\nEpochs:500\nReduceLROnPlateau\nLayerDepth:2,4,8\nPatience:10epochs\nGradient Clipping:\nHidden Dimension:16,32,64\nNormalization: LayerNorm\n1.0 (norm threshold)\nActivation:LeakyReLU\nTask Mode:\nLoss:\nEdgeHandling:Undirected\nGraph or Node classification\nBCEWithLogitsLoss\nInput\nHidden\nFinal\nNode\nGraph\nHydraulic\n→InputFeatures\nLayer\nL",
+          "filename": "fuzzy_gnn_scanned.pdf",
+          "page": 7
+        },
+        {
+          "text": ", searching, dynamic pro-gramming, geometry, graphs, and strings, all uniformly represented over the\ngraph domain. To provide supervision on the algorithmic trajectories, CLRS-\n30 decomposes these trajectories into consecutive execution steps, called hints\n(Veličković et al., 2022).\nWith the supervision of hints, the NAR model is\nexpected to align better with the underlying algorithm and have fewe",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 7
+        },
+        {
+          "text": ", 04022018.\nXu, K., Hu, W., Leskovec, J., Jegelka, S., 2019. How powerful are graph neural\nnetworks?, in: International Conference on Learning Representations.\n25\nXu, K., Li, J., Zhang, M., Du, S.S., Kawarabayashi, K.i., Jegelka, S., 2020.\nWhat can neural networks reason about?, in: International Conference on\nLearning Representations.\nXu, K., Zhang, M., Li, J., Du, S.S., Kawarabayashi, K.I., Jege",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 25
+        }
+      ],
+      "retrieval_hit": true,
+      "seconds": 0.1
+    },
+    {
+      "id": "s09",
+      "type": "scanned",
+      "source": "fuzzy_gnn_scanned.pdf",
+      "pages": "9;10",
+      "question": "Which architecture performed worst on the joint leak detection and localization task?",
+      "reference": "GCNConv, with a Graph F1 of 0.113 and a Node F1 of 0.106.",
+      "answer": "",
+      "refused": null,
+      "route": "",
+      "confidence": "",
+      "contexts": [
+        {
+          "text": "5% is argued tobe insignificant in\nlightofthegainedexplainabilityadvantage.\nOther architectures,such as GATConv,GATv2Conv,and TransformerConv,provided comparable performance with Graph F1 scores in the range of 0.927-0.934. Their runtime,however,varied\nmore widely (from 1271 up to 7046 seconds),indicating that runtime efficiency may be sensitive to\nthe specific architecture and hyperparameter conf",
+          "filename": "fuzzy_gnn_scanned.pdf",
+          "page": 9
+        },
+        {
+          "text": "competition provides two years of data from 2018 and 2019. Data from 2018\nwill be used to determine the threshold ξ for residual analysis, while data from\n2019 will be employed to evaluate the model’s performance in leakage detection\nand localization.\nWe compare our method with the state-of-the-art GNN model for leakage\ndetection and localization, specifically the ChebNet model proposed by Garðars",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 16
+        },
+        {
+          "text": "detection combined with leak localization (a joint graph and node classification task). The evaluation metrics include graph F1 score,\nnode F1 score,test loss,and runtime.\n4.1\nLeakDetection/GraphClassification\nFor theleak detection task,all models were trained under identical experimental conditions with a\nconsistent range of network depths and hidden layer dimensions.\nGENConv emerged as the toppe",
+          "filename": "fuzzy_gnn_scanned.pdf",
+          "page": 8
+        },
+        {
+          "text": "due to its low ξ value, which also resulted in numerous false alarms. The results\nhighlight the importance of combining both algorithmic and non-algorithmic\nknowledge for effective leakage detection.\n20\nTable 5: Leakage detection performance comparison.\nξ\nDeteced leakages (2018)\nDetected leakages (2019)\nChebNet\n1.2\n12/14\n15/23\nAIGNN\n0.25\n12/14\n22/23\nChebNetIN\n1.4\n12/14\n17/23\nChebNetEMB\n1.6\n12/14\n1",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 20
+        },
+        {
+          "text": "画\n10%Val\nGraph\nclass\n画\nHidden units\nFeatureextraction\nForwardPass\nBCENode Los=-[slog(gi)+(1-yi)log(1-gi)]\nGraph,\nEvaluation\nclass\nBCEGraph Loss =-1[y;log(gi) + (1 -yi) log(1 9i)]\nFig.2.Experimentalconfigurationforleakdetection andlocalization.Continuous arrowsindicatethenodelevel leak localization path,while dashed arrows show the graph-level leak detection path.\n4\nResults andDiscussion\nThe result",
+          "filename": "fuzzy_gnn_scanned.pdf",
+          "page": 8
+        }
+      ],
+      "retrieval_hit": true,
+      "seconds": 0.1
+    },
+    {
+      "id": "s10",
+      "type": "scanned",
+      "source": "fuzzy_gnn_scanned.pdf",
+      "pages": "9",
+      "question": "Why did the graph-level F1 scores not exceed 0.94?",
+      "reference": "Most likely because of class imbalance, since leaks occur infrequently in water distribution networks; the imbalance is even stronger at the node level.",
+      "answer": "",
+      "refused": null,
+      "route": "",
+      "confidence": "",
+      "contexts": [
+        {
+          "text": "detection combined with leak localization (a joint graph and node classification task). The evaluation metrics include graph F1 score,\nnode F1 score,test loss,and runtime.\n4.1\nLeakDetection/GraphClassification\nFor theleak detection task,all models were trained under identical experimental conditions with a\nconsistent range of network depths and hidden layer dimensions.\nGENConv emerged as the toppe",
+          "filename": "fuzzy_gnn_scanned.pdf",
+          "page": 8
+        },
+        {
+          "text": "features and localized node-level anomalies.\nFGENConv attained a Graph F1 of 0.814 and a Node F1 of 0.758.While scores are modestly\nlower than those of GENConv,they remain within the 5% trade-off estimated from the graph\nclassification model.\nGATv2Conv (Graph F1: 0.835, Node F1: 0.779),TransformerConv (0.808, 0.746), and\nSAGEConv (0.783, 0.717) showed reasonable performance in the joint task of le",
+          "filename": "fuzzy_gnn_scanned.pdf",
+          "page": 9
+        },
+        {
+          "text": "accuracy interpretability trade off.The significant increase in run time is likely due to the\nexpandedfeaturespaceresultingfromfuzzification.\nOverall,GENConvdelivered thehighestpredictive accuracyforbothleakdetection andlocalization, while its fuzzified version, FGENConv, showed a slight drop in performance. Nonetheless,\nit provided explainable outputs via fuzzy rule-based interpretations. This tr",
+          "filename": "fuzzy_gnn_scanned.pdf",
+          "page": 9
+        },
+        {
+          "text": "5% is argued tobe insignificant in\nlightofthegainedexplainabilityadvantage.\nOther architectures,such as GATConv,GATv2Conv,and TransformerConv,provided comparable performance with Graph F1 scores in the range of 0.927-0.934. Their runtime,however,varied\nmore widely (from 1271 up to 7046 seconds),indicating that runtime efficiency may be sensitive to\nthe specific architecture and hyperparameter conf",
+          "filename": "fuzzy_gnn_scanned.pdf",
+          "page": 9
+        },
+        {
+          "text": "are computed to capture the\nnetwork's operational state.The processed data is then used to construct a graph g =(V,&),where\nvertices V represent the nodes of theWDNand edges  represent the physical pipe connections\nbetween them. The adjacency matrix A is generated based on the provided topology, with Aij = 1\nindicating a direct connection between nodes i and j.Each node i is assigned a feature vec",
+          "filename": "fuzzy_gnn_scanned.pdf",
+          "page": 7
+        }
+      ],
+      "retrieval_hit": true,
+      "seconds": 0.1
+    },
+    {
+      "id": "o01",
+      "type": "out_of_scope",
+      "source": "",
+      "pages": "",
+      "question": "What is the capital city of Australia?",
+      "reference": "",
+      "answer": "",
+      "refused": null,
+      "route": "",
+      "confidence": "",
+      "contexts": [
+        {
+          "text": "516\n517\n518\n519\n520\n521\n522\n523\n524\n525\n526\n527\n528\n529\n530\n531\n532\n533\n534\n535\n536\n537\n538\n539\n540\n541\n542\n543\n544\n545\n546\n547\n548\n549\n550\n551\n552\n553\n554\n555\n556\n557\n558\n559\n560\n561\n562\n563\n564\n565\n566\n567\n568\n569\n570\n571\n572\n573\n574\n575\n576\n577\n578\n579\n580\n581\n582\n583\n584\n585\n586\n587\n588\n589\n590\n591\n592\n593\n594\n595\n596\n597\n598\n599\n600\n601\n602\n603\n604\n605\n606\n607\n608\n609\n610\n611\n612\n613\n614\n615\n",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 17
+        },
+        {
+          "text": ".19\n0.09\n0.09\n0.09\n0.13\n0.09\n0.09\n0.09\n0.10\n0.09\n0.11\n0.09\n0.09\n0.19\n0.09\n0.10\n0.10\n0.09\n0.07\n0.08\n0.08\n0.10\n0.11\n0.07\n0.11\n0.12\n0.08\n0.07\n0.07\n0.11\n0.07\n0.10\n0.08\n0.10\n0.10\n0.20\n0.12\n0.11\n0.11\n0.07\n0.09\n0.23\n0.07\n0.10\n0.10\n0.09\n0.10\n0.11\n0.64\n0.10\n0.11\n0.09\n0.09\n0.22\n0.09\n0.07\n1.00\n0.10\n0.11\n0.11\n0.09\n0.25\n0.17",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 17
+        },
+        {
+          "text": ".37\n0.07\n0.07\n0.09\n0.12\n0.08\n0.11\n0.10\n0.12\n0.20\n0.07\n0.08\n0.08\n0.11\n0.08\n0.08\n0.11\n0.11\n0.10\n0.11\n0.08\n0.11\n0.09\n0.06\n0.09\n0.12\n0.08\n0.08\n0.09\n0.07\n0.10\n0.09\n0.09\n0.11\n0.07\n0.07\n0.20\n0.08\n0.09\n0.10\n0.08\n0.15\n0.10\n0.09\n0.09\n0.11\n0.11\n0.08\n0.11\n0.08\n0.11\n0.08\n0.10\n0.10\n0.11\n0.09\n0.11\n0.12\n0.09\n0.09\n0.10\n0.09\n0.10",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 17
+        },
+        {
+          "text": ".19\n0.08\n0.09\n0.44\n0.09\n0.09\n0.10\n0.09\n0.09\n0.08\n0.07\n0.09\n0.09\n0.18\n0.09\n0.09\n0.08\n0.10\n0.08\n0.14\n0.08\n0.06\n0.09\n0.07\n0.10\n0.11\n0.09\n0.09\n0.09\n0.09\n0.11\n0.11\n0.07\n0.09\n0.08\n0.10\n0.12\n0.27\n0.10\n0.37\n0.08\n0.12\n0.09\n0.08\n0.07\n0.08\n0.07\n0.10\n0.09\n0.11\n0.09\n0.08\n0.06\n0.09\n0.11\n0.09\n0.10\n0.09\n0.15\n0.10\n0.09\n0.12\n0.09",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 17
+        },
+        {
+          "text": ".08\n0.06\n0.11\n0.08\n0.12\n0.12\n0.08\n0.11\n0.09\n0.07\n0.09\n0.08\n0.09\n0.08\n0.11\n0.09\n0.11\n0.19\n0.09\n0.11\n0.09\n0.07\n0.51\n0.14\n0.09\n0.09\n0.10\n0.10\n0.08\n0.11\n0.10\n0.11\n0.08\n0.08\n0.06\n0.08\n0.08\n0.08\n0.09\n0.10\n0.08\n0.11\n0.08\n0.08\n0.09\n0.08\n0.10\n0.49\n0.10\n0.17\n0.12\n0.12\n0.08\n0.10\n0.15\n0.09\n0.31\n0.10\n0.09\n0.08\n0.08\n0.06\n0.09",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 17
+        }
+      ],
+      "retrieval_hit": null,
+      "seconds": 0.1
+    },
+    {
+      "id": "o02",
+      "type": "out_of_scope",
+      "source": "",
+      "pages": "",
+      "question": "How do I reset the password of a Gmail account?",
+      "reference": "",
+      "answer": "",
+      "refused": null,
+      "route": "",
+      "confidence": "",
+      "contexts": [
+        {
+          "text": "did not exceed 0.94,likely due to\nclass imbalance,which realistically mirrors the infrequent occurrence of leaks in WDNs. The drop\nin F1-scores for node-level classification is even more pronounced, as the imbalance is exacerbated\nat the finer granularity—only a small subset of nodes are affected by leaks across the entire network.\nThis significant imbalance at the nodelevel accounts for thelower ",
+          "filename": "fuzzy_gnn_scanned.pdf",
+          "page": 9
+        },
+        {
+          "text": ".07\n0.08\n0.07\n0.10\n0.08\n0.08\n0.09\n0.14\n0.11\n0.06\n0.10\n0.13\n0.06\n0.06\n0.07\n0.11\n0.09\n0.06\n0.11\n0.08\n0.07\n0.07\n0.09\n0.10\n0.07\n0.08\n0.09\n0.08\n0.08\n0.09\n0.08\n0.10\n0.09\n0.09\n0.12\n0.08\n0.11\n0.15\n0.10\n0.12\n0.09\n0.09\n0.14\n0.10\n0.09\n0.24\n0.07\n0.10\n0.09\n0.09\n0.08\n0.06\n0.11\n0.08\n0.12\n0.12\n0.08\n0.11\n0.09\n0.07\n0.09\n0.08\n0.09",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 17
+        },
+        {
+          "text": ".19\n0.08\n0.09\n0.44\n0.09\n0.09\n0.10\n0.09\n0.09\n0.08\n0.07\n0.09\n0.09\n0.18\n0.09\n0.09\n0.08\n0.10\n0.08\n0.14\n0.08\n0.06\n0.09\n0.07\n0.10\n0.11\n0.09\n0.09\n0.09\n0.09\n0.11\n0.11\n0.07\n0.09\n0.08\n0.10\n0.12\n0.27\n0.10\n0.37\n0.08\n0.12\n0.09\n0.08\n0.07\n0.08\n0.07\n0.10\n0.09\n0.11\n0.09\n0.08\n0.06\n0.09\n0.11\n0.09\n0.10\n0.09\n0.15\n0.10\n0.09\n0.12\n0.09",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 17
+        },
+        {
+          "text": ".37\n0.07\n0.07\n0.09\n0.12\n0.08\n0.11\n0.10\n0.12\n0.20\n0.07\n0.08\n0.08\n0.11\n0.08\n0.08\n0.11\n0.11\n0.10\n0.11\n0.08\n0.11\n0.09\n0.06\n0.09\n0.12\n0.08\n0.08\n0.09\n0.07\n0.10\n0.09\n0.09\n0.11\n0.07\n0.07\n0.20\n0.08\n0.09\n0.10\n0.08\n0.15\n0.10\n0.09\n0.09\n0.11\n0.11\n0.08\n0.11\n0.08\n0.11\n0.08\n0.10\n0.10\n0.11\n0.09\n0.11\n0.12\n0.09\n0.09\n0.10\n0.09\n0.10",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 17
+        },
+        {
+          "text": ".09\n0.10\n0.10\n0.09\n0.09\n0.09\n0.10\n0.09\n0.09\n0.08\n0.12\n0.10\n0.08\n0.08\n0.10\n0.08\n0.08\n0.10\n0.10\n0.10\n0.09\n0.09\n0.09\n0.09\n0.09\n0.09\n0.09\n0.08\n0.08\n0.08\n0.09\n0.09\n0.10\n0.11\n0.08\n0.09\n0.09\n0.09\n0.09\n0.09\n0.10\n0.09\n0.10\n0.10\n0.10\n0.10\n0.08\n0.08\n0.09\n0.09\n0.10\n0.08\n0.09\n0.10\n0.10\n0.08\n0.09\n0.09\n0.09\n0.09\n0.10\n0.10\n0.08",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 17
+        }
+      ],
+      "retrieval_hit": null,
+      "seconds": 0.1
+    },
+    {
+      "id": "o03",
+      "type": "out_of_scope",
+      "source": "",
+      "pages": "",
+      "question": "What is the recommended daily water intake for an adult?",
+      "reference": "",
+      "answer": "",
+      "refused": null,
+      "route": "",
+      "confidence": "",
+      "contexts": [
+        {
+          "text": "of the Ford-\nFulkerson algorithm (Ford and Fulkerson, 1956). We collect the edge capacities\nin a capacity matrix C and we construct a flow matrix F to represent the flow\ninformation of the entire network when the max-flow is achieved. The Ford-\nFulkerson algorithm has two key subroutines:\n1. Finding a valid path P = {vs, . . . , vt} from the source node vs to the sink\nnode vt.\n2. Augmenting the re",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 11
+        },
+        {
+          "text": "different locations.\nThe remaining content of this paper is structured as follows. In Section 2, we\nreview related work on pressure estimation in WDN and NAR. Section 3 pro-vides the problem definition for leakage detection and localization in WDNs, as\nwell as an overview of the basic architecture of NAR models. Section 4 presents\nour proposed method, AIGNN. In Section 5, we evaluate the effective",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 5
+        },
+        {
+          "text": "into model-based and data-driven methods (Chan et al., 2018; Romero-Ben\net al., 2023). Model-based approaches involve constructing a hydraulic model\nto simulate the behavior of WDNs (Sanz et al., 2016; Sophocleous et al., 2019;\nSteffelbauer et al., 2022).\nThese hydraulic models typically characterize the\nstate evolution of WDNs using physics-based equations, providing high-fidelity\npredictions of ",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 2
+        },
+        {
+          "text": "pipe networks. Urban Water Journal 7, 25–45.\nRodionov, G., Prokhorenkova, L., 2024. Discrete neural algorithmic reasoning.\narXiv preprint arXiv:2402.11628 .\nRomero-Ben, L., Alves, D., Blesa, J., Cembrano, G., Puig, V., Duviella, E.,\n2022. Leak localization in water distribution networks using data-driven and\nmodel-based approaches. Journal of Water Resources Planning and Management 148, 04022016.\n",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 24
+        },
+        {
+          "text": "material fatigue\ncan lead to the development of leaks.\nConsequently, water systems around\nthe world experience significant water loss, necessitating continuous monitoring, maintenance, and repair efforts to mitigate the impact and conserve as\nmuch water as possible (Puust et al., 2010). The issue of water loss presents\na substantial economic burden, with the estimated worldwide annual financial\nim",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 2
+        }
+      ],
+      "retrieval_hit": null,
+      "seconds": 0.1
+    },
+    {
+      "id": "o04",
+      "type": "out_of_scope",
+      "source": "",
+      "pages": "",
+      "question": "Which team won the 2022 FIFA World Cup?",
+      "reference": "",
+      "answer": "",
+      "refused": null,
+      "route": "",
+      "confidence": "",
+      "contexts": [
+        {
+          "text": ".19\n0.08\n0.09\n0.44\n0.09\n0.09\n0.10\n0.09\n0.09\n0.08\n0.07\n0.09\n0.09\n0.18\n0.09\n0.09\n0.08\n0.10\n0.08\n0.14\n0.08\n0.06\n0.09\n0.07\n0.10\n0.11\n0.09\n0.09\n0.09\n0.09\n0.11\n0.11\n0.07\n0.09\n0.08\n0.10\n0.12\n0.27\n0.10\n0.37\n0.08\n0.12\n0.09\n0.08\n0.07\n0.08\n0.07\n0.10\n0.09\n0.11\n0.09\n0.08\n0.06\n0.09\n0.11\n0.09\n0.10\n0.09\n0.15\n0.10\n0.09\n0.12\n0.09",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 17
+        },
+        {
+          "text": ".11\n0.08\n0.10\n0.10\n0.11\n0.09\n0.11\n0.12\n0.09\n0.09\n0.10\n0.09\n0.10\n0.10\n0.11\n0.10\n0.10\n0.10\n0.11\n0.11\n0.08\n0.12\n0.11\n0.10\n0.09\n0.09\n0.10\n0.10\n0.09\n0.08\n0.08\n0.11\n0.09\n0.10\n0.11\n0.10\n0.10\n0.11\n0.09\n0.09\n0.09\n0.08\n0.09\n0.09\n0.09\n0.09\n0.09\n0.09\n0.09\n0.09\n0.10\n0.08\n0.08\n0.09\n0.10\n0.10\n0.09\n0.09\n0.09\n0.09\n0.10\n0.09\n0.09",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 17
+        },
+        {
+          "text": ".37\n0.07\n0.07\n0.09\n0.12\n0.08\n0.11\n0.10\n0.12\n0.20\n0.07\n0.08\n0.08\n0.11\n0.08\n0.08\n0.11\n0.11\n0.10\n0.11\n0.08\n0.11\n0.09\n0.06\n0.09\n0.12\n0.08\n0.08\n0.09\n0.07\n0.10\n0.09\n0.09\n0.11\n0.07\n0.07\n0.20\n0.08\n0.09\n0.10\n0.08\n0.15\n0.10\n0.09\n0.09\n0.11\n0.11\n0.08\n0.11\n0.08\n0.11\n0.08\n0.10\n0.10\n0.11\n0.09\n0.11\n0.12\n0.09\n0.09\n0.10\n0.09\n0.10",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 17
+        },
+        {
+          "text": ".10\n0.08\n0.09\n0.10\n0.10\n0.08\n0.09\n0.09\n0.09\n0.09\n0.10\n0.10\n0.08\n0.09\n0.09\n0.09\n0.09\n0.08\n0.09\n0.09\n0.09\n0.10\n0.11\n0.09\n0.09\n0.09\n0.07\n0.09\n0.09\n0.09\n0.10\n0.10\n0.09\n0.10\n0.10\n0.09\n0.09\n0.09\n0.09\n0.09\n0.09\n0.09\n0.09\n0.09\n0.11\n0.09\n0.10\n0.10\n0.10\n0.09\n0.09\n0.09\n0.10\n0.10\n0.10\n0.10\n0.09\n0.09\n0.09\n0.09\n0.09\n0.08\n0.09",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 17
+        },
+        {
+          "text": ".09\n0.10\n0.10\n0.09\n0.09\n0.09\n0.10\n0.09\n0.09\n0.08\n0.12\n0.10\n0.08\n0.08\n0.10\n0.08\n0.08\n0.10\n0.10\n0.10\n0.09\n0.09\n0.09\n0.09\n0.09\n0.09\n0.09\n0.08\n0.08\n0.08\n0.09\n0.09\n0.10\n0.11\n0.08\n0.09\n0.09\n0.09\n0.09\n0.09\n0.10\n0.09\n0.10\n0.10\n0.10\n0.10\n0.08\n0.08\n0.09\n0.09\n0.10\n0.08\n0.09\n0.10\n0.10\n0.08\n0.09\n0.09\n0.09\n0.09\n0.10\n0.10\n0.08",
+          "filename": "gnn_leak_detection.pdf",
+          "page": 17
+        }
+      ],
+      "retrieval_hit": null,
+      "seconds": 0.1
+    }
+  ]
+}

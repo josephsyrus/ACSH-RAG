@@ -1,145 +1,139 @@
-name: ACSH-RAG Evaluation Gate
+name: ACSH-RAG Evaluation
 
-# Trigger: every pull request to main, every push to main, and manual runs
+# Every push and pull request runs the free retrieval check (no API key, no cost).
+# The full RAGAS evaluation calls the Gemini API, so it only runs when started by
+# hand: Actions -> ACSH-RAG Evaluation -> Run workflow -> tick "full".
 on:
-  pull_request:
-    branches: [ main ]
   push:
-    branches: [ main ]
+  pull_request:
   workflow_dispatch:
+    inputs:
+      full:
+        description: "Also run the full RAGAS evaluation (uses the Gemini API)"
+        type: boolean
+        default: false
+
+# The evaluation documents are not committed. Store them as a base64 zip in the
+# EVAL_CORPUS_ZIP_B64 secret, containing gnn_leak_detection.pdf (kept as text) and
+# fuzzy_gnn_source.pdf (turned into an image-only "scanned" copy):
+#   zip corpus.zip gnn_leak_detection.pdf fuzzy_gnn_source.pdf && base64 -w0 corpus.zip
 
 jobs:
-  evaluate:
-    name: RAGAS Evaluation
+  retrieval-check:
+    name: Retrieval check (every change)
     runs-on: ubuntu-latest
-    timeout-minutes: 45
-
+    timeout-minutes: 40
     steps:
-      # ── 1. Checkout ────────────────────────────────────────────────
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      # ── 2. Python setup ────────────────────────────────────────────
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: "pip"
 
-      # ── 3. Install all dependencies ────────────────────────────────
-      #    Uses the project's own requirements files so CI matches the
-      #    versions this codebase is actually built against:
-      #      requirements.txt   — retrieval stack (incl. networkx + spacy)
-      #      requirements_b.txt — google-genai + LangGraph + langchain-core
-      #      requirements_c.txt — ragas + datasets + pandas (evaluation)
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install -r requirements_b.txt
-          pip install -r requirements_c.txt
+          pip install -r requirements.txt -r requirements_b.txt "pandas>=2.2"
           python -m spacy download en_core_web_sm
 
-      # ── 4. Create .env file from GitHub Secrets ────────────────────
-      - name: Create .env file
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: |
-          echo "GEMINI_API_KEY=$GEMINI_API_KEY" > .env
-          echo ".env created."
-
-      # ── 5. Restore document corpus ─────────────────────────────────
-      #    Documents are NOT committed to git (they are in .gitignore).
-      #    They are stored as a base64 zip in the DOCUMENTS_ZIP_B64 secret.
-      #    See README / Person C guide Step 3.2 for how to create it.
-      - name: Restore Documents folder
-        env:
-          DOCUMENTS_ZIP_B64: ${{ secrets.DOCUMENTS_ZIP_B64 }}
-        run: |
-          if [ -n "$DOCUMENTS_ZIP_B64" ]; then
-            echo "$DOCUMENTS_ZIP_B64" | base64 -d > documents.zip
-            unzip -o documents.zip -d .
-            echo "Documents restored:"
-            ls -la Documents/ || echo "Documents/ is empty."
-          else
-            echo "WARNING: DOCUMENTS_ZIP_B64 secret not set."
-            echo "Creating empty Documents folder."
-            mkdir -p Documents
-          fi
-
-      # ── 6. Run ingestion (builds all 3 indexes including graph_db) ─
-      - name: Ingest documents
-        run: |
-          echo "Running ingestion (vector + BM25 + graph)..."
-          python ingest_documents.py
-          echo "Ingestion complete."
-          ls -la chroma_db/ bm25_index/ graph_db/ || true
-
-      # ── 7. Run RAGAS evaluation in CI mode ─────────────────────────
-      #    Uses ci_sample_size from ragas_config.yaml (default: 20 rows).
-      #    Exit code 0 = pass, 1 = fail → build fails automatically.
-      - name: Run RAGAS evaluation
-        run: |
-          python evaluation/eval.py --ci
-
-      # ── 8. Upload results even if eval failed ──────────────────────
-      - name: Upload evaluation results
-        uses: actions/upload-artifact@v4
-        if: always()
+      - name: Cache embedding and reranking models
+        uses: actions/cache@v4
         with:
-          name: eval-results-${{ github.run_id }}
+          path: ~/.cache/huggingface
+          key: hf-models-v1
+
+      - name: Restore evaluation documents
+        id: corpus
+        env:
+          EVAL_CORPUS_ZIP_B64: ${{ secrets.EVAL_CORPUS_ZIP_B64 }}
+        run: |
+          if [ -z "$EVAL_CORPUS_ZIP_B64" ]; then
+            echo "::warning::EVAL_CORPUS_ZIP_B64 is not set, so the evaluation was skipped."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          mkdir -p eval_src
+          echo "$EVAL_CORPUS_ZIP_B64" | base64 -d > eval_src/corpus.zip
+          unzip -o eval_src/corpus.zip -d eval_src
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+
+      - name: Build evaluation index (includes OCR of the scanned copy)
+        if: steps.corpus.outputs.ready == 'true'
+        run: >
+          python evaluation/prepare_corpus.py
+          --text eval_src/gnn_leak_detection.pdf
+          --scanned eval_src/fuzzy_gnn_source.pdf=fuzzy_gnn_scanned.pdf
+
+      - name: Retrieval check
+        if: steps.corpus.outputs.ready == 'true'
+        run: python evaluation/eval.py --retrieval-only
+
+      - name: Write summary
+        if: always() && steps.corpus.outputs.ready == 'true'
+        run: python evaluation/summary.py >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload results and dashboard
+        if: always() && steps.corpus.outputs.ready == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: retrieval-check-${{ github.run_id }}
           path: evaluation/results/
           retention-days: 30
 
-      # ── 9. Post score summary as PR comment ────────────────────────
-      - name: Post evaluation summary to PR
-        if: github.event_name == 'pull_request' && always()
-        uses: actions/github-script@v7
+  ragas:
+    name: Full RAGAS evaluation (manual)
+    if: github.event_name == 'workflow_dispatch' && inputs.full
+    needs: retrieval-check
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
         with:
-          script: |
-            const fs = require('fs');
-            const path = 'evaluation/results/latest.json';
+          python-version: "3.11"
+          cache: "pip"
 
-            if (!fs.existsSync(path)) {
-              console.log('No latest.json — skipping PR comment.');
-              return;
-            }
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements_b.txt -r requirements_c.txt
+          python -m spacy download en_core_web_sm
 
-            const r      = JSON.parse(fs.readFileSync(path, 'utf8'));
-            const passed = r.passed;
-            const s      = r.scores;
-            const t      = r.thresholds;
-            const icon   = passed ? '✅' : '❌';
+      - name: Cache embedding and reranking models
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-models-v1
 
-            const row = (label, key) => {
-              const score = s[key].toFixed(4);
-              const thr   = t[key].toFixed(2);
-              const ok    = s[key] >= t[key] ? '✅' : '❌';
-              return `| ${label} | \`${score}\` | \`${thr}\` | ${ok} |`;
-            };
+      - name: Restore evaluation documents
+        env:
+          EVAL_CORPUS_ZIP_B64: ${{ secrets.EVAL_CORPUS_ZIP_B64 }}
+        run: |
+          mkdir -p eval_src
+          echo "$EVAL_CORPUS_ZIP_B64" | base64 -d > eval_src/corpus.zip
+          unzip -o eval_src/corpus.zip -d eval_src
 
-            const body = [
-              `## ${icon} ACSH-RAG Evaluation Report`,
-              '',
-              '| Metric | Score | Threshold | Status |',
-              '|--------|-------|-----------|--------|',
-              row('Faithfulness (anti-hallucination)', 'faithfulness'),
-              row('Answer Relevancy', 'answer_relevancy'),
-              row('Context Recall', 'context_recall'),
-              row('Context Precision', 'context_precision'),
-              '',
-              `**Overall average:** \`${r.overall_average.toFixed(4)}\`  |  **Threshold:** \`${r.overall_threshold}\``,
-              '',
-              `**Samples:** ${r.samples_evaluated}  |  **Mode:** ${r.mode}  |  **Run:** [#${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})`,
-              '',
-              passed
-                ? '✅ **This PR passes the evaluation gate.** Safe to merge.'
-                : '❌ **This PR fails the evaluation gate.** Faithfulness or overall score is below threshold. Fix the issue before merging.',
-            ].join('\n');
+      - name: Build evaluation index
+        run: >
+          python evaluation/prepare_corpus.py
+          --text eval_src/gnn_leak_detection.pdf
+          --scanned eval_src/fuzzy_gnn_source.pdf=fuzzy_gnn_scanned.pdf
 
-            await github.rest.issues.createComment({
-              owner:        context.repo.owner,
-              repo:         context.repo.repo,
-              issue_number: context.payload.pull_request.number,
-              body:         body,
-            });
+      - name: RAGAS evaluation
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python evaluation/eval.py --ci --pause 10
+
+      - name: Write summary
+        if: always()
+        run: python evaluation/summary.py >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload results and dashboard
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ragas-${{ github.run_id }}
+          path: evaluation/results/
+          retention-days: 30

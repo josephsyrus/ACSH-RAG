@@ -39,6 +39,50 @@ def shape_citations(state: Dict) -> List[Dict]:
     return citations
 
 
+def shape_details(state: Dict) -> Dict:
+    """The numbers behind an answer's acceptance, for the 'advanced details' view:
+    the confidence gate's score and thresholds, and the Self-RAG support check."""
+    from pipeline.confidence_gate import MAX_RETRIES, PASS_THRESHOLD, RETRY_THRESHOLD
+
+    chunks = state.get("reranked_chunks") or []
+    score = chunks[0].get("rerank_score") if chunks else None
+    if score is None:
+        decision = "refuse"
+    elif score >= PASS_THRESHOLD:
+        decision = "pass"
+    elif score >= RETRY_THRESHOLD:
+        decision = "retry"
+    else:
+        decision = "refuse"
+
+    critic = state.get("critic_result") or {}
+    verification = None
+    if critic:
+        verification = {
+            "checked":               critic.get("checked", True),
+            "verdict":               critic.get("verdict"),
+            "support_ratio":         critic.get("support_ratio"),
+            "sentences_checked":     critic.get("sentences_checked"),
+            "sentences_unsupported": critic.get("sentences_unsupported"),
+            "threshold":             critic.get("support_threshold"),
+            "explanation":           str(critic.get("explanation") or "")[:500],
+        }
+
+    return {
+        "gate": {
+            "score":           None if score is None else round(float(score), 3),
+            "pass_threshold":  PASS_THRESHOLD,
+            "retry_threshold": RETRY_THRESHOLD,
+            "decision":        decision,
+            "retries_used":    state.get("retry_count", 0),
+            "max_retries":     MAX_RETRIES,
+        },
+        "verification": verification,
+        # The gate passed, but the answer step said the passages don't answer it.
+        "insufficient_context": state.get("draft_answer") == "INSUFFICIENT_CONTEXT",
+    }
+
+
 def run_pipeline(query: str, index_dirs: Dict = None) -> Dict:
     """
     Run the full ACSH-RAG pipeline for a query.
@@ -82,6 +126,17 @@ def run_pipeline(query: str, index_dirs: Dict = None) -> Dict:
         "citations":  shape_citations(result),
         "route":      result.get("route",           "unknown"),
         "confidence": result.get("confidence",      "unknown"),
+        "details":    shape_details(result),
+        # The passages the answer was actually written from (after reranking),
+        # so evaluation judges the answer against the same evidence.
+        "contexts":   [
+            {
+                "text":     c.get("text", ""),
+                "filename": c.get("filename") or (c.get("metadata") or {}).get("filename") or "",
+                "page":     c.get("page") or (c.get("metadata") or {}).get("page") or None,
+            }
+            for c in result.get("reranked_chunks", [])
+        ],
     }
 
 
