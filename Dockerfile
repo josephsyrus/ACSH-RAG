@@ -8,6 +8,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends libgl1 libglib2
 RUN useradd -m -u 1000 user
 USER user
 ENV HOME=/home/user PATH=/home/user/.local/bin:$PATH PYTHONUNBUFFERED=1
+# Created as "user" so the app can write sessions/ and ocr_cache/ (WORKDIR alone makes it root-owned).
+RUN mkdir -p /home/user/app
 WORKDIR /home/user/app
 
 # CPU-only torch keeps the image small (the default wheel bundles CUDA).
